@@ -79,10 +79,13 @@ export function Billiards() {
 
   const onPointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
     unlock();
-    if (!isActive(session)) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    if (
+      !isActive(session) || session.charge || event.button !== 0 ||
+      !event.isPrimary
+    ) return;
     const point = pointer(event);
     if (!point) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
     const [x, y] = point;
     const { game } = session;
     const cue = game.balls[0];
@@ -92,8 +95,13 @@ export function Billiards() {
     ) {
       pickUp(session);
     }
-    if (game.phase === "placing") moveCue(session, x, y);
-    else aimAt(session, x, y);
+    if (game.phase === "placing") {
+      moveCue(session, x, y);
+    } else if (game.phase === "aiming") {
+      aimAt(session, x, y);
+      // Touch still drags to aim; its separate Hold button avoids accidental shots.
+      if (event.pointerType === "mouse") beginCharge(session, "table");
+    }
     setView(viewOf(session));
   };
 
@@ -110,9 +118,19 @@ export function Billiards() {
   };
 
   const onPointerUp = (event: PointerEvent<HTMLCanvasElement>) => {
-    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    if (event.button !== 0) return;
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+      cancelTableCharge();
+      return;
+    }
+    if (session.game.phase === "placing") place(session);
+    else releaseCharge(session, "table");
     event.currentTarget.releasePointerCapture(event.pointerId);
-    act(place)();
+    setView(viewOf(session));
+  };
+
+  const cancelTableCharge = () => {
+    if (session.charge === "table") act(cancelCharge)();
   };
 
   let screen = null;
@@ -141,10 +159,12 @@ export function Billiards() {
         ref={canvasRef}
         width={WIDTH}
         height={HEIGHT}
-        aria-label="Pool table. Aim with the mouse or arrow keys, hold Space to charge and release to shoot, or press Enter for the set strength."
+        aria-label="Pool table. Aim with the mouse or arrow keys, hold the left mouse button or Space to charge and release to shoot, or press Enter for the set strength."
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={cancelTableCharge}
+        onLostPointerCapture={cancelTableCharge}
       />
       {view.mode === "game" && (
         <>
