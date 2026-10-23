@@ -56,10 +56,11 @@ export function TitleScreen(
         seconds.
       </p>
       <p className="keys">
-        Aim with the mouse or a finger. Hold Space or Hold to charge; release to
-        shoot. Drag the strength bar for precise shots. Or <kbd>←</kbd>{" "}
-        <kbd>→</kbd> aim, <kbd>↑</kbd> <kbd>↓</kbd> strength, <kbd>Enter</kbd>
+        Aim with the mouse, then hold the left button to charge and release to
+        shoot. Space or the Hold button also charges; touch drags to aim. Drag
+        the strength bar for precise shots. Or <kbd>←</kbd> <kbd>→</kbd> aim,
         {" "}
+        <kbd>↑</kbd> <kbd>↓</kbd> strength, <kbd>Enter</kbd>{" "}
         shoot at set strength, <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd>{" "}
         <kbd>D</kbd> spin.
       </p>

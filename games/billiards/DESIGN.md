@@ -209,9 +209,12 @@ judge(state: GameState, result: ShotResult): Outcome;
 
 ## Controls
 
-- [x] Mouse: the cue follows the pointer; pull the power bar (right of the
-      table) down and let go to shoot. The same bar works for touch, so there's
-      one way to shoot rather than a separate drag-back on the table
+- [x] Mouse: the cue follows the pointer; hold the left button on the table to
+      lock aim and charge, release to shoot. Clicking or dragging the cue ball
+      with ball in hand still places it without charging. Alternatively, pull
+      the power bar (right of the table) down and let go to shoot. The same bar
+      works for touch, so there's one way to shoot rather than a separate
+      drag-back on the table
 - [x] Touch: drag on the table to aim, the power bar to shoot; fine-aim buttons
       under it
 - [x] Keyboard: ← → aim (Shift for fine), ↑ ↓ strength, Enter shoots at the set

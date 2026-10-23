@@ -193,11 +193,14 @@ notice. Dispose GPU resources on unmount and rebuild generated render targets
 after graphics-context restoration.
 
 Billiards strength and charge state live in `runtime/session.ts`. Space or the
-Hold button charges from zero over 1.5 seconds; matching release fires. Enter
-fires preset strength, and dragging the bar remains available. Cancellation must
-disarm release on pause, focus loss, pointer interruption, or game end. Keep
-charge ownership explicit so keyboard and pointer inputs cannot fire each
-other's shots. Physics receives cue speed, not charge timing.
+Hold button charges from zero over 1.5 seconds; matching release fires. Holding
+the left mouse button on the table does the same, except when placing or picking
+up the cue ball. Table gestures have separate charge ownership from the Hold
+button; touch on the table remains drag-to-aim. Enter fires preset strength, and
+dragging the bar remains available. Cancellation must disarm release on pause,
+focus loss, pointer interruption, or game end. Keep charge ownership explicit so
+keyboard and pointer inputs cannot fire each other's shots. Physics receives cue
+speed, not charge timing.
 
 ## Coding standard
 

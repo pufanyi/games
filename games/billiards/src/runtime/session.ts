@@ -27,7 +27,7 @@ import {
 export const MAX_ELEVATION = 60;
 /** Seconds from zero to full strength; full charge holds until release. */
 export const CHARGE_SECONDS = 1.5;
-export type ChargeSource = "keyboard" | "pointer";
+export type ChargeSource = "keyboard" | "pointer" | "table";
 
 export interface Session {
   /** "title" shows a racked table behind the title screen. */
