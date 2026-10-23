@@ -162,7 +162,22 @@ Tests live beside their modules. See `games/gold-miner/CALIBRATION.md` for
 historical evidence, approximate tuning, and outstanding fidelity gaps. Do not
 present estimates as measured original-game constants.
 
-### Billiards rendering
+### Billiards source organization
+
+`games/billiards/src/` separates responsibilities:
+
+- `physics/`: deterministic motion, collisions, table geometry, and seeded RNG.
+- `rules/`: pure scoring and foul decisions from shot events.
+- `game/`: game state, shot playback, and aim-guide calculations.
+- `runtime/`: session actions, audio, storage, and browser keyboard bindings.
+- `rendering/`: Three.js scene, camera, meshes, and visual layout constants.
+- `ui/`: React screens, controls, CSS, and the canvas lifecycle hook.
+- `main.tsx`: the browser entry point.
+
+Keep physics, rules, and game modules free of browser, React, and Three.js
+imports. UI composes the browser runtime and renderer; lower layers never import
+UI. Keep cohesive modules together rather than adding folders solely to reduce
+the number of files at one level.
 
 `games/billiards/src/rendering/` owns the Three.js WebGL renderer, camera
 projection and picking, table/ball/cue meshes, guides, and procedural textures.
@@ -234,8 +249,12 @@ after graphics-context restoration.
   offline and on their own.
 - `localStorage` access is wrapped in try/catch and only for per-viewer
   conveniences (e.g. the remembered grid/list view).
-- Tests sit next to the code (`*_test.ts`/`*_test.tsx`). Test logic without a
-  browser: routing with fake files, game rules through the pure simulation.
+- Unit tests sit next to their modules (`*_test.ts`/`*_test.tsx`) so behavior
+  and tests move together. They are separate files, never imported by production
+  entry points; Vite bundles reachable imports, not every file under `src/`.
+  Reserve a game-local `tests/e2e/` for future browser tests that span features.
+  Test logic without a browser: routing with fake files, game rules through the
+  pure simulation.
 - Comments explain why, not what. Match the surrounding code's density.
 - Commit messages: short imperative subject, wrapped body explaining why.
 

@@ -2,20 +2,20 @@
 // and the clock. No DOM, no canvas, no Date.now(), no Math.random(), so it runs
 // in tests the same as in the browser; the session drives it with real time.
 
-import { type Ball, createBall } from "./physics/ball.ts";
-import { CUSHION_REACH } from "./physics/collide.ts";
-import { BALL_RADIUS as R } from "./physics/constants.ts";
-import type { Shot } from "./physics/cue.ts";
-import { headSpot, rack } from "./physics/rack.ts";
+import { type Ball, createBall } from "../physics/ball.ts";
+import { CUSHION_REACH } from "../physics/collide.ts";
+import { BALL_RADIUS as R } from "../physics/constants.ts";
+import type { Shot } from "../physics/cue.ts";
+import { headSpot, rack } from "../physics/rack.ts";
 import {
   type Pose,
   type ShotEvent,
   type ShotResult,
   simulateShot,
-} from "./physics/simulate.ts";
-import { TABLE } from "./physics/table.ts";
-import { seededRandom } from "./random.ts";
-import { type Foul, FOUL_PENALTY, judge, TIME_LIMIT } from "./rules/timed.ts";
+} from "../physics/simulate.ts";
+import { TABLE } from "../physics/table.ts";
+import { seededRandom } from "../physics/random.ts";
+import { type Foul, FOUL_PENALTY, judge, TIME_LIMIT } from "../rules/timed.ts";
 
 export type Phase = "placing" | "aiming" | "rolling" | "won" | "lost";
 

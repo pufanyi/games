@@ -4,7 +4,7 @@ import { CUSHION_REACH } from "./collide.ts";
 import { BALL_RADIUS as R } from "./constants.ts";
 import { headSpot, rack } from "./rack.ts";
 import { simulateShot } from "./simulate.ts";
-import { seededRandom } from "../random.ts";
+import { seededRandom } from "./random.ts";
 import { TABLE } from "./table.ts";
 
 const TOLERANCE = 1e-5;

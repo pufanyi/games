@@ -2,10 +2,10 @@
 // along the aim, and where a ball it hits would head. It ignores spin, throw
 // and squirt, like a player's own estimate, so the physics still matters.
 
-import type { Ball } from "./physics/ball.ts";
-import { contactTime, CUSHION_REACH, cushionTime } from "./physics/collide.ts";
-import { BALL_RADIUS as R } from "./physics/constants.ts";
-import { TABLE } from "./physics/table.ts";
+import type { Ball } from "../physics/ball.ts";
+import { contactTime, CUSHION_REACH, cushionTime } from "../physics/collide.ts";
+import { BALL_RADIUS as R } from "../physics/constants.ts";
+import { TABLE } from "../physics/table.ts";
 
 export interface AimGuide {
   /** Where the cue ball's center is at first contact (the ghost ball). */

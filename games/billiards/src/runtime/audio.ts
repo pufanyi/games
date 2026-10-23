@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no files to load.
 // Clicks and thuds get louder with the impact speed.
-import type { GameEvent } from "./game.ts";
+import type { GameEvent } from "../game/game.ts";
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;

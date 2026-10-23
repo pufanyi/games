@@ -12,9 +12,9 @@ import {
   placeCueBall,
   shoot,
   tick,
-} from "./game.ts";
-import { MAX_CUE_SPEED, MISCUE_LIMIT } from "./physics/constants.ts";
-import type { Foul } from "./rules/timed.ts";
+} from "../game/game.ts";
+import { MAX_CUE_SPEED, MISCUE_LIMIT } from "../physics/constants.ts";
+import type { Foul } from "../rules/timed.ts";
 import {
   type Best,
   loadBest,

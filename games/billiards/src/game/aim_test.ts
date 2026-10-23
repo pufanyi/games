@@ -1,9 +1,9 @@
 import { assert, assertAlmostEquals, assertEquals } from "@std/assert";
 import { aimGuide } from "./aim.ts";
-import { createBall } from "./physics/ball.ts";
-import { CUSHION_REACH } from "./physics/collide.ts";
-import { BALL_RADIUS as R } from "./physics/constants.ts";
-import { TABLE } from "./physics/table.ts";
+import { createBall } from "../physics/ball.ts";
+import { CUSHION_REACH } from "../physics/collide.ts";
+import { BALL_RADIUS as R } from "../physics/constants.ts";
+import { TABLE } from "../physics/table.ts";
 
 Deno.test("a straight-on aim stops a ball's width short of the target", () => {
   const balls = [createBall(0, 0, 0), createBall(1, 0.5, 0)];

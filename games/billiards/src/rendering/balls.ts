@@ -5,7 +5,7 @@ import {
   Quaternion,
   SphereGeometry,
 } from "three";
-import { type Game, poses } from "../game.ts";
+import { type Game, poses } from "../game/game.ts";
 import { BALL_RADIUS as R } from "../physics/constants.ts";
 import { TABLE } from "../physics/table.ts";
 import { type Quat, randomQuat, spin } from "./orientation.ts";

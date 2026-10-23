@@ -7,7 +7,7 @@ import {
   BALL_RADIUS as R,
   BALL_RESTITUTION,
 } from "./constants.ts";
-import { seededRandom } from "../random.ts";
+import { seededRandom } from "./random.ts";
 
 const DEGREES = 180 / Math.PI;
 
