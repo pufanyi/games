@@ -194,7 +194,43 @@ function paintGround(ctx: Ctx) {
   ctx.fillStyle = vignette;
   ctx.fillRect(0, GROUND_Y, WIDTH, HEIGHT - GROUND_Y);
 
+  cactus(ctx, 232, 40, 1);
+  cactus(ctx, 622, 28, -1);
   grass(ctx);
+}
+
+/** A saguaro standing on the grass line, with arms raised on either side. */
+function cactus(ctx: Ctx, x: number, height: number, side: number) {
+  const base = GROUND_Y - 2;
+  const shape = new Path2D();
+  shape.roundRect(x - 5.5, base - height, 11, height + 2, 5.5);
+  // A tall arm on `side`, a short one on the other.
+  const arms: [number, number, number][] = [
+    [side, height * 0.42, height * 0.75],
+    [-side, height * 0.3, height * 0.5],
+  ];
+  for (const [dir, from, top] of arms) {
+    const ax = x + dir * 12;
+    shape.roundRect(Math.min(x, ax), base - from - 7, 12, 7, 3.5);
+    shape.roundRect(ax - 3.5, base - top, 7, top - from, 3.5);
+  }
+  // Outline behind the fill, so the pieces read as one plant.
+  ink(ctx, 4, shape);
+  const green = ctx.createLinearGradient(x - 14, 0, x + 14, 0);
+  green.addColorStop(0, "#8cc152");
+  green.addColorStop(1, "#4f8a2b");
+  ctx.fillStyle = green;
+  ctx.fill(shape);
+  ctx.strokeStyle = "rgb(40 80 20 / 0.45)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x - 1.5, base - height + 4);
+  ctx.lineTo(x - 1.5, base);
+  ctx.moveTo(x + 2, base - height + 5);
+  ctx.lineTo(x + 2, base);
+  ctx.stroke();
+  ctx.fillStyle = "rgb(255 255 255 / 0.35)";
+  ctx.fillRect(x - 4, base - height + 4, 1.5, height * 0.6);
 }
 
 function ammonite(ctx: Ctx, x: number, y: number, r: number) {

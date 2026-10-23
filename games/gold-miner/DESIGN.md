@@ -73,26 +73,44 @@ A random selection at random prices on each visit:
 ## Art direction
 
 Cartoon vector art in the style of classic Flash games, drawn entirely in code
-(no image files). Keep new art consistent with it:
+(no image files): Canvas 2D in the mine, inline SVG in the React screens (both
+use the same `INK` outline). Keep new art consistent with it:
 
 - [x] **Ink outlines** on every sprite (`INK` in `src/rendering/paint.ts`, about
       2px), over a gradient body lit from the top left, with a glossy highlight
 - [x] **Palette:** golden-hour sky, terracotta mesas, sienna-to-umber dirt
       strata, warm gold, cool cyan diamonds, wood browns for UI
 - [x] **Scenery** (`src/rendering/scenery.ts`): sky with sun and drifting
-      clouds, mesas, layered dirt with speckles, pebbles, roots, and two hidden
-      fossils; static layers are painted once into offscreen canvases
-- [x] **Sprites** (`src/rendering/sprites.ts`): faceted gold with twinkles,
-      cracked rocks, cut diamonds, tied sacks, barrels of TNT with a lit fuse,
-      and moles; buried items sit in a darker pocket of dirt
-- [x] **Miner and winch** (`src/rendering/render.ts`): a bearded prospector in a
-      hard hat turning a crank, belted to a pulley on an A-frame
+      clouds, mesas, saguaro cacti, layered dirt with speckles, pebbles, roots,
+      and two hidden fossils; static layers are painted once into offscreen
+      canvases
+- [x] **Sprites** (`src/rendering/sprites.ts`): pitted gold with twinkles,
+      chipped and cracked rocks, glowing cut diamonds, patched sacks, bones and
+      skulls, barrels of TNT with a lit fuse, and moles that trundle along their
+      tunnels; buried items sit in a darker pocket of dirt
+- [x] **Camp** (`src/rendering/camp.ts`): a plank deck over the shaft, a rope
+      reel on two trestles whose coil grows as the rope comes in, and an ore
+      cart whose heap of gold grows toward the level's goal
+- [x] **Miner:** a stout, bearded prospector in a hard hat and plaid shirt,
+      turning the reel's crank with both hands (two-bone arms that follow the
+      crank). His face reacts: blinks at rest, strains and sweats hauling heavy
+      loads, grins at a good payout, frowns at a poor one
+- [x] **Claw:** a steel grab with a shackle, a hinge block, and two hooked jaws
+      that close on a catch
 - [x] **Effects:** popping money text; explosions with a flash, shock ring,
       smoke, and debris
 - [x] **HUD:** wooden signboards with coin and clock icons, boost tags, and
       dynamite sticks on the platform
 - [x] **Screens:** parchment panels in a wooden frame, chunky gold buttons that
-      press down, and the title in gold with an ink outline
+      press down, and the title in gold with an ink outline between a nugget and
+      a diamond
+- [x] **Shop** (`src/ui/screens.tsx`, art in `src/ui/art.tsx`): a general store
+      whose storekeeper (eyeshade, spectacles, handlebar mustache) stands behind
+      a counter. The goods stand on it with paper price tags: a bundle of
+      dynamite, a strength tonic, a four-leaf clover, a rock collector's book,
+      and a jar of diamond polish. Pointing at or focusing one has him describe
+      it in a speech bubble (and say how much you're short); buying makes him
+      grin and stamps the item Sold
 - [x] **Font:** Lilita One (SIL Open Font License), bundled in `src/fonts/` with
       its license so the game works offline
 

@@ -1,7 +1,14 @@
 // The screens over the canvas: title, pause, shop, and game over, plus the
 // on-screen controls. They render from a `View` and report actions upward.
-import { type MouseEvent, type ReactNode, useEffect, useRef } from "react";
+import {
+  type MouseEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { View } from "../runtime/session.ts";
+import { CoinIcon, GemIcon, NuggetIcon, ShopIcon, Shopkeeper } from "./art.tsx";
 import { SHOP_ITEMS, type ShopItem } from "../game/shop.ts";
 
 function bestText(view: View) {
@@ -13,7 +20,13 @@ function bestText(view: View) {
  * A screen over the canvas. Like a modal dialog, it moves focus to its main
  * (`.primary`) button when it opens, so Enter or Space picks it.
  */
-function Panel({ label, children }: { label: string; children: ReactNode }) {
+function Panel(
+  { label, className, children }: {
+    label: string;
+    className?: string;
+    children: ReactNode;
+  },
+) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.querySelector<HTMLButtonElement>(".primary")?.focus();
@@ -22,7 +35,7 @@ function Panel({ label, children }: { label: string; children: ReactNode }) {
     <div className="overlay">
       <div
         ref={ref}
-        className="panel"
+        className={className ? `panel ${className}` : "panel"}
         role="dialog"
         aria-modal="true"
         aria-label={label}
@@ -39,7 +52,11 @@ export function TitleScreen(
   const best = bestText(view);
   return (
     <Panel label="Gold Miner">
-      <h1>Gold Miner</h1>
+      <div className="logo">
+        <NuggetIcon />
+        <h1>Gold Miner</h1>
+        <GemIcon />
+      </div>
       <p className="tagline">
         Swing the claw, haul up gold and diamonds, and reach each level's goal
         before time runs out.
@@ -80,6 +97,11 @@ export function PauseScreen(
   );
 }
 
+/**
+ * The general store between levels: the storekeeper behind his counter, the
+ * day's goods standing on it with price tags. Pointing at or focusing an item
+ * has him describe it; clicking buys it.
+ */
 export function ShopScreen({
   view,
   onBuy,
@@ -89,33 +111,85 @@ export function ShopScreen({
   onBuy: (item: ShopItem) => void;
   onContinue: () => void;
 }) {
+  const [talk, setTalk] = useState<{ item: ShopItem; bought: boolean } | null>(
+    null,
+  );
+  const about = (item: ShopItem) => () => {
+    if (talk?.item !== item) setTalk({ item, bought: false });
+  };
+
+  let speech: ReactNode = "Howdy, partner! Have a look at today's goods.";
+  if (talk?.bought) {
+    speech = "Pleasure doing business! Good luck down there.";
+  } else if (talk) {
+    const offer = view.offers.find((o) => o.item === talk.item);
+    const info = SHOP_ITEMS[talk.item];
+    let note = "";
+    if (offer?.sold) note = " You've already got one.";
+    else if (offer && offer.price > view.money) {
+      note = ` You're $${offer.price - view.money} short.`;
+    }
+    speech = (
+      <>
+        <strong>{info.label}:</strong> {info.description}
+        {note}
+      </>
+    );
+  }
+
   return (
-    <Panel label="Shop">
-      <h2>Level {view.level} cleared!</h2>
-      <p>
-        {`You have $${view.money}. The next goal is $${view.nextGoal}; ` +
+    <Panel label="Shop" className="shop">
+      <div className="shop-head">
+        <h2>Level {view.level} cleared!</h2>
+        <p className="purse">
+          <CoinIcon />
+          <span className="visually-hidden">You have</span> ${view.money}
+        </p>
+      </div>
+      <div className="store">
+        <div className="store-back">
+          <p className="store-sign" aria-hidden="true">General Store</p>
+          <Shopkeeper happy={talk?.bought ?? false} />
+          <p className="speech" aria-live="polite">{speech}</p>
+        </div>
+        <div className="counter" onPointerLeave={() => setTalk(null)}>
+          {view.offers.map((offer) => {
+            const info = SHOP_ITEMS[offer.item];
+            const short = !offer.sold && view.money < offer.price;
+            // aria-disabled rather than disabled, so the storekeeper can
+            // still describe what you can't buy.
+            return (
+              <button
+                key={offer.item}
+                type="button"
+                className="offer"
+                aria-disabled={offer.sold || short}
+                data-short={short || undefined}
+                onPointerEnter={about(offer.item)}
+                onFocus={about(offer.item)}
+                onClick={() => {
+                  if (offer.sold || short) return;
+                  onBuy(offer.item);
+                  setTalk({ item: offer.item, bought: true });
+                }}
+              >
+                <span className="offer-art">
+                  <ShopIcon item={offer.item} />
+                  {offer.sold && <span className="stamp">Sold</span>}
+                </span>
+                <span className="tag">
+                  <span className="offer-name">{info.label}</span>
+                  <span className="offer-price">${offer.price}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <p className="shop-note">
+        {`The next goal is $${view.nextGoal}; ` +
           "spending money here makes it harder to reach."}
       </p>
-      <div className="offers">
-        {view.offers.map((offer) => {
-          const info = SHOP_ITEMS[offer.item];
-          return (
-            <button
-              key={offer.item}
-              type="button"
-              className="offer"
-              disabled={offer.sold || view.money < offer.price}
-              onClick={() => onBuy(offer.item)}
-            >
-              <span className="offer-name">{info.label}</span>
-              <span className="offer-price">
-                {offer.sold ? "Bought" : `$${offer.price}`}
-              </span>
-              <span className="offer-description">{info.description}</span>
-            </button>
-          );
-        })}
-      </div>
       <button
         type="button"
         className="button primary"

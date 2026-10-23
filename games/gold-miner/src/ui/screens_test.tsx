@@ -45,11 +45,19 @@ Deno.test("shop lists offers and disables what you can't buy", () => {
     />,
   );
   assertStringIncludes(html, "Level 2 cleared!");
+  assertStringIncludes(html, "$300");
   assertStringIncludes(html, "The next goal is $2010");
-  assert(!buttonWith(html, "Dynamite").includes("disabled"));
-  assertStringIncludes(buttonWith(html, "Diamond polish"), "disabled"); // too expensive
-  assertStringIncludes(buttonWith(html, "Lucky clover"), "Bought");
-  assertStringIncludes(buttonWith(html, "Lucky clover"), "disabled");
+  assertStringIncludes(buttonWith(html, "Dynamite"), 'aria-disabled="false"');
+  // Too expensive, and already bought.
+  assertStringIncludes(
+    buttonWith(html, "Diamond polish"),
+    'aria-disabled="true"',
+  );
+  assertStringIncludes(buttonWith(html, "Lucky clover"), "Sold");
+  assertStringIncludes(
+    buttonWith(html, "Lucky clover"),
+    'aria-disabled="true"',
+  );
   assertStringIncludes(html, "Start level 3");
 });
 
