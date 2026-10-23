@@ -32,6 +32,13 @@ export const games: Game[] = [
       "Little robots, big adventures. Bomb, battle, splash, and race through four colorful worlds.",
     tags: ["arcade", "two-player", "classic"],
   },
+  {
+    slug: "nail-house",
+    title: "Nail House",
+    description:
+      "Six stubborn family members, four windows, one house. Hold the line against the demolition crew.",
+    tags: ["tower-defense", "strategy", "classic"],
+  },
 ];
 
 export function findGame(slug: string): Game | undefined {
