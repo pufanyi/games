@@ -131,8 +131,8 @@ that line too (and vice versa).
 - The game runs in an iframe that gets keyboard focus when the play page loads.
   It should fill its window (`100vw` × `100vh`) and scale to its size, since the
   player resizes it to fit the screen and for fullscreen.
-- The three `sample-*` entries in `platform/games.ts` are layout placeholders;
-  remove them as real games are added.
+- The remaining `sample-*` entries in `platform/games.ts` are layout
+  placeholders; remove them as real games are added.
 - A game can have a `games/<slug>/DESIGN.md` with its requirements as a
   checklist. Read it before working on that game and tick items off as they're
   built. Open decisions are marked **Decision:**; ask the user rather than
@@ -140,10 +140,32 @@ that line too (and vice versa).
 
 ## Games
 
-| Game       | Status                                              | Design                       |
-| ---------- | --------------------------------------------------- | ---------------------------- |
-| Gold Miner | v1: single-player complete; multiplayer not started | `games/gold-miner/DESIGN.md` |
-| Billiards  | Single-player complete; two-player not started      | `games/billiards/DESIGN.md`  |
+| Game       | Status                                                    | Design                       |
+| ---------- | --------------------------------------------------------- | ---------------------------- |
+| Gold Miner | v1: single-player complete; multiplayer not started       | `games/gold-miner/DESIGN.md` |
+| Billiards  | Single-player complete; two-player not started            | `games/billiards/DESIGN.md`  |
+| Bomb It 3  | Four modes and local two-player; fidelity gaps documented | `games/bomb-it-3/DESIGN.md`  |
+
+### Bomb It 3 source organization
+
+`games/bomb-it-3/` is a standalone Canvas 2D + React game with four modes
+(arcade, battle, water, race), local two-player, and 48 reference map layouts.
+Read its `DESIGN.md` and `CALIBRATION.md` before changing gameplay or fidelity
+claims. Original SWF files and decompiled sources are research inputs only and
+must not be included in published builds.
+
+- `src/content/`: catalog, tuning tables, and map geometry.
+- `src/game/`: deterministic 30 Hz simulation, movement, combat, mode rules,
+  campaign state, and AI; no browser or React imports.
+- `src/rendering/`: original Canvas artwork and HUD; read-only state access.
+- `src/runtime/`: browser session, audio, keyboard and independently owned touch
+  inputs; clear held inputs on pause and focus loss.
+- `src/ui/`: React menus, controls, session lifecycle, and CSS.
+
+Rendering owns animation frames; React updates on transitions and once per
+second. Tests include completion of every race layout, including water-slide
+corners. Numeric source evidence and approximate behavior are documented
+separately; do not call the recreation a pixel-identical port.
 
 ### Gold Miner source organization
 
