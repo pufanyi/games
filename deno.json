@@ -1,5 +1,6 @@
 {
   "workspace": [
+    "./games/billiards",
     "./games/gold-miner"
   ],
   "nodeModulesDir": "auto",
