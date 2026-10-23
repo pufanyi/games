@@ -3,7 +3,8 @@
     "./games/billiards",
     "./games/gold-miner",
     "./games/bomb-it-3",
-    "./games/nail-house"
+    "./games/nail-house",
+    "./games/kingdom-rush"
   ],
   "nodeModulesDir": "auto",
   "compilerOptions": {

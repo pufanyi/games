@@ -39,6 +39,13 @@ export const games: Game[] = [
       "Six stubborn family members, four windows, one house. Hold the line against the demolition crew.",
     tags: ["tower-defense", "strategy", "classic"],
   },
+  {
+    slug: "kingdom-rush",
+    title: "Kingdom Rush",
+    description:
+      "Build towers along the road and hold the line through seventeen stages of orcs, ogres and worse.",
+    tags: ["tower-defense", "strategy", "classic"],
+  },
 ];
 
 export function findGame(slug: string): Game | undefined {
