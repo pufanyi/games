@@ -5,24 +5,29 @@ close to a real table as we can get. Two modes: a single-player race against the
 clock to clear the table, and two-player 8-ball, on one device or online. Check
 items off as they're built.
 
-Not built yet: until it publishes a build, the catalog shows this game as
-"Coming soon".
+Single-player is built and playable; two-player isn't started.
 
 ## Modes
 
 ### Single-player: beat the clock
 
-- [ ] Rack all 15 object balls; pot them in any order before time runs out
-- [ ] One clock for the whole rack (start around 3 minutes and tune by playing);
-      it keeps running while balls are moving
-- [ ] No 8-ball rules in this mode: any ball in any pocket counts, there is no
+One rack against the clock (decided; a run of racks with shorter limits was the
+alternative).
+
+- [x] Rack all 15 object balls (an 8-ball rack, from a seed); pot them in any
+      order before time runs out
+- [x] The break: cue ball in hand behind the head string
+- [x] One clock for the whole rack, 3 minutes (tune by playing); it keeps
+      running while balls are moving. A shot rolling when it runs out still
+      finishes, and wins if it clears the table
+- [x] No 8-ball rules in this mode: any ball in any pocket counts, there is no
       calling pockets
-- [ ] Foul (scratch, cue ball off the table, missing every ball): costs time
-      (~10s) and gives ball in hand anywhere
-- [ ] Clearing the table wins; the score is the time left. Best time in
+- [x] Foul (scratch, missing every ball): costs 10s and gives ball in hand
+      anywhere; a potted cue ball comes back on the head spot. Balls potted on a
+      foul still count. (Balls can't leave the table, so there's no
+      off-the-table foul.)
+- [x] Clearing the table wins; the score is the time left. Best time in
       `localStorage`, wrapped in try/catch
-- [ ] **Decision:** is it one rack against the clock, or a run of racks where
-      each one's time limit is shorter (and potting a ball adds a few seconds)?
 
 ### Two-player: 8-ball
 
@@ -197,69 +202,80 @@ judge(state: GameState, result: ShotResult): Outcome;
 // Outcome: foul?, ball in hand, groups, whose turn, winner, time penalty
 ```
 
-- [ ] One pure function per mode: `eightBall.ts`, `timed.ts`
-- [ ] Each rule from [Modes](#modes) has a test built from a hand-written event
-      list, no physics needed
+- [x] `timed.ts`: the single-player rules, one pure function
+- [ ] `eight_ball.ts`: the two-player rules
+- [x] Each timed-mode rule has a test built from a hand-written event list, no
+      physics needed
 
 ## Controls
 
-- [ ] Mouse: the cue follows the pointer around the cue ball; press and drag
-      back to set power, release to shoot
-- [ ] Touch: drag on the table to aim, a power slider at the side; fine-aim
-      buttons
-- [ ] Keyboard: ← → aim (Shift for fine), ↑ ↓ power, Space shoots
-- [ ] Spin: a cue ball diagram where you place the tip, limited to the miscue
-      radius; an elevation slider for swerve and massé
-- [ ] Ball in hand: drag the cue ball; positions overlapping a ball or outside
-      the allowed area are refused
-- [ ] Aim line: from the cue ball to a ghost ball where it first makes contact,
-      with a short line for the object ball's direction. It assumes no spin and
-      no throw, like a real player's guess, so the physics still matters
+- [x] Mouse: the cue follows the pointer; pull the power bar (right of the
+      table) down and let go to shoot. The same bar works for touch, so there's
+      one way to shoot rather than a separate drag-back on the table
+- [x] Touch: drag on the table to aim, the power bar to shoot; fine-aim buttons
+      under it
+- [x] Keyboard: ← → aim (Shift for fine), ↑ ↓ power, Space shoots, W A S D spin,
+      M picks the cue ball up again with ball in hand
+- [x] Spin: a cue ball diagram where you place the tip, limited to the miscue
+      radius; an elevation slider (0–60°) for swerve and massé. Both reset to a
+      center hit with a level cue after each shot
+- [x] Ball in hand: drag the cue ball (or arrow keys, Enter to place); positions
+      overlapping a ball or outside the allowed area are refused
+- [x] Aim line: from the cue ball to a ghost ball where it first makes contact,
+      with a short line for the object ball's direction and a faint one for the
+      cue ball's tangent line. It assumes no spin and no throw, like a real
+      player's guess, so the physics still matters
 
 ## Screens and HUD
 
-- [ ] Screens: title (mode select), playing, pause, game over / results, online
-      lobby
-- [ ] HUD in single-player: time left, balls left, best time
+- [x] Screens: title, playing, pause, results (cleared or time's up)
+- [ ] Mode select and online lobby, once two-player exists
+- [x] HUD in single-player: time left (red under 30s), balls left, shots, the
+      last foul, what to do next, and a tray of balls 1–15 lighting up as
+      they're potted; best time on the title and results screens
 - [ ] HUD in two-player: both players, their groups, whose turn, shot clock,
       ball in hand, the last foul and why
-- [ ] Pause automatically when the tab is hidden (`visibilitychange`); in
+- [x] Pause automatically when the tab is hidden (`visibilitychange`); in
       single-player, the clock stops
-- [ ] Sound: cue strike, ball–ball clicks and cushion thuds with volume by
-      impact speed, pocket drops; mute toggle
-- [ ] Works at phone width in landscape
+- [x] Sound: cue strike, ball–ball clicks and cushion thuds with volume by
+      impact speed, pocket drops; mute toggle (synthesized with Web Audio)
+- [x] Works at phone width in landscape
 
 ## Rendering
 
-- [ ] **Decision:** top-down 2D on a canvas (the Flash-era look, much less work;
-      recommended) or 3D with three.js (perspective, lighting; the cue angle and
-      spin are easier to see)?
-- [ ] Either way, balls show rolling: numbers and stripes turn with the ball's
-      orientation, and they have shadows
+Top-down 2D on a canvas (decided; 3D with three.js was the alternative).
+
+- [x] Balls show rolling: each is shaded pixel by pixel from its orientation
+      (integrated from the recorded spin), so numbers, stripes and the cue
+      ball's red spots turn as it rolls and spins. They have shadows
 - [ ] The physics doesn't depend on the choice, so a 3D view could come later
 
 ## Technical
 
-- [ ] A standalone TypeScript app built with Vite: its own `deno.json` with a
+- [x] A standalone TypeScript app built with Vite: its own `deno.json` with a
       `build` task writing to `games/billiards/dist/` (see `AGENTS.md`)
-- [ ] Physics, rules and game flow in plain TS; drawing on a canvas; menus and
+- [x] Physics, rules and game flow in plain TS; drawing on a canvas; menus and
       HUD as React components that only re-render when what they show changes
       (never every frame)
-- [ ] Fixed internal resolution, 16:9 (a 2:1 table plus room for the HUD),
-      scaled to fit; fills its window, since it runs in the platform's iframe
-      and must also work opened directly at `/games/billiards/`
-- [ ] Playback uses `requestAnimationFrame`, interpolating between recorded
+- [x] Fixed internal resolution, 1280 × 720 (a 2:1 table plus room for the HUD
+      and side controls), scaled to fit; fills its window, since it runs in the
+      platform's iframe and must also work opened directly at
+      `/games/billiards/`
+- [x] Playback uses `requestAnimationFrame`, interpolating between recorded
       frames by real time, so it looks the same at any frame rate
 
 ```
 games/billiards/src/
-  physics/   constants, table geometry, motion, collisions, cue, simulateShot
-  rules/     eight_ball.ts, timed.ts
-  game/      game state and turn flow (aim → shot → playback → judge)
-  render/    canvas drawing
-  input/     aiming, power, spin, ball in hand → Shot
-  net/       online play
-  ui/        React screens and HUD
+  physics/      constants, table geometry, motion, collisions, cue, simulateShot
+  rules/        timed.ts (eight_ball.ts later)
+  game.ts       game state and turn flow (place → aim → shot → playback → judge)
+  aim.ts        the aim guide
+  session.ts    screens, pause, the shot being lined up, best time
+  layout.ts     canvas size and table ↔ canvas coordinates
+  render.ts     canvas drawing; balls.ts paints the rolling balls
+  screens.tsx   React screens, HUD, spin and power controls
+  Billiards.tsx the component: loop, pointer and keyboard input
+  audio.ts, storage.ts, style.css, main.tsx
 ```
 
 ## Multiplayer

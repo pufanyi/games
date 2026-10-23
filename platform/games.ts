@@ -25,8 +25,8 @@ export const games: Game[] = [
     slug: "billiards",
     title: "Billiards",
     description:
-      "Clear the table against the clock, or play 8-ball with a friend online.",
-    tags: ["sports", "multiplayer", "classic"],
+      "Clear all 15 balls against the clock, on a table with real pool physics.",
+    tags: ["sports", "classic"],
     aspectRatio: [16, 9],
   },
   // The sample-* entries are placeholders to show the layout — remove them as

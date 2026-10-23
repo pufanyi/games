@@ -143,7 +143,7 @@ that line too (and vice versa).
 | Game       | Status                                              | Design                       |
 | ---------- | --------------------------------------------------- | ---------------------------- |
 | Gold Miner | v1: single-player complete; multiplayer not started | `games/gold-miner/DESIGN.md` |
-| Billiards  | Physics engine built; no playable build yet         | `games/billiards/DESIGN.md`  |
+| Billiards  | Single-player complete; two-player not started      | `games/billiards/DESIGN.md`  |
 
 ### Gold Miner source organization
 
