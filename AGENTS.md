@@ -135,6 +135,7 @@ that line too (and vice versa).
 | Game       | Status              | Design                       |
 | ---------- | ------------------- | ---------------------------- |
 | Gold Miner | Designed, not built | `games/gold-miner/DESIGN.md` |
+| Billiards  | Designed, not built | `games/billiards/DESIGN.md`  |
 
 ## Coding standard
 
