@@ -1,10 +1,18 @@
 {
+  "workspace": [
+    "./games/gold-miner"
+  ],
   "nodeModulesDir": "auto",
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "jsxImportSourceTypes": "@types/react",
-    "lib": ["deno.ns", "dom", "dom.iterable", "esnext"]
+    "lib": [
+      "deno.ns",
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ]
   },
   "tasks": {
     "dev": "deno run -A npm:vite",

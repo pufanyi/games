@@ -1,0 +1,225 @@
+/* The game fills its window (the platform's iframe, or a tab of its own) and
+   letterboxes the 4:3 stage in it. Everything inside the stage scales with the
+   stage via container query units. */
+
+:root {
+  color-scheme: dark;
+  --letterbox: #120c06;
+  --panel: #fffaf2;
+  --panel-text: #2b1d0e;
+  --muted: #7a6650;
+  --border: #e2d4bf;
+  --accent: #d4930f;
+  --accent-text: #2b1d0e;
+  --highlight: #1e7a34;
+  --overlay: rgb(30 18 6 / 0.62);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--letterbox);
+  line-height: 1.4;
+}
+
+#root {
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+.stage {
+  position: relative;
+  width: min(100vw, calc(100dvh * 4 / 3));
+  aspect-ratio: 4 / 3;
+  container-type: inline-size;
+  overflow: hidden;
+  user-select: none;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+/* Screens */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 3cqw;
+  overflow-y: auto;
+  background: var(--overlay);
+}
+
+.panel {
+  width: min(100%, 66cqw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4cqw;
+  padding: 2.6cqw 3cqw;
+  font-size: clamp(11px, 2.1cqw, 17px);
+  text-align: center;
+  color: var(--panel-text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 1.6cqw;
+}
+
+.panel h1,
+.panel h2 {
+  margin: 0;
+  font-size: 1.6em;
+}
+
+.panel h1 {
+  font-size: 2.2em;
+  color: #b7860b;
+}
+
+.panel p {
+  margin: 0;
+}
+
+.muted,
+.keys {
+  color: var(--muted);
+}
+
+.highlight {
+  color: var(--highlight);
+  font-weight: 700;
+}
+
+kbd {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.85em;
+  padding: 0 0.35em;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
+.button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.45em 1.2em;
+  border: 1px solid var(--border);
+  border-radius: 0.6em;
+  background: var(--panel);
+  color: var(--panel-text);
+  cursor: pointer;
+}
+
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.button:focus-visible,
+.offer:focus-visible,
+.control:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.offers {
+  width: 100%;
+  display: grid;
+  gap: 0.6em;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14em), 1fr));
+}
+
+.offer {
+  font: inherit;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.1em 0.6em;
+  padding: 0.6em 0.8em;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 0.6em;
+  background: #f4ede2;
+  color: var(--panel-text);
+  cursor: pointer;
+}
+
+.offer:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.offer:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.offer-name,
+.offer-price {
+  font-weight: 700;
+}
+
+.offer-price {
+  color: #a8710a;
+}
+
+.offer-description {
+  grid-column: 1 / -1;
+  font-size: 0.85em;
+  color: var(--muted);
+}
+
+/* On-screen controls, over the bottom-right of the mine */
+
+.controls {
+  position: absolute;
+  right: 1.5cqw;
+  bottom: 1.5cqw;
+  display: flex;
+  gap: 1cqw;
+}
+
+.control {
+  font: inherit;
+  font-size: clamp(10px, 1.7cqw, 14px);
+  font-weight: 600;
+  padding: 0.35em 0.8em;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  border-radius: 0.6em;
+  background: rgb(20 12 4 / 0.55);
+  color: #fff7e6;
+  cursor: pointer;
+}
+
+.control:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.count {
+  display: inline-block;
+  min-width: 1.4em;
+  margin-left: 0.3em;
+  padding: 0 0.3em;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.2);
+}

@@ -234,7 +234,6 @@ function Play({ game }: { game: GameListing }) {
               src={src}
               title={game.title}
               allow="fullscreen; autoplay; gamepad"
-              allowFullScreen
             />
           </div>
         )
