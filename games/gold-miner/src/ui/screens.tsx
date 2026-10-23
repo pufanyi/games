@@ -1,8 +1,8 @@
 // The screens over the canvas: title, pause, shop, and game over, plus the
 // on-screen controls. They render from a `View` and report actions upward.
 import { type MouseEvent, type ReactNode, useEffect, useRef } from "react";
-import type { View } from "./session.ts";
-import { SHOP_ITEMS, type ShopItem } from "./sim.ts";
+import type { View } from "../runtime/session.ts";
+import { SHOP_ITEMS, type ShopItem } from "../game/shop.ts";
 
 function bestText(view: View) {
   const { best } = view;

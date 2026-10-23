@@ -1,6 +1,6 @@
 // The backdrop: a golden-hour sky with drifting clouds, distant mesas, and
 // layered dirt. The static parts are painted once into offscreen canvases.
-import { GROUND_Y, HEIGHT, WIDTH } from "./level.ts";
+import { GROUND_Y, HEIGHT, WIDTH } from "../game/config.ts";
 import { blobPath, circlePath, type Ctx, hash, INK, ink } from "./paint.ts";
 
 interface Layers {

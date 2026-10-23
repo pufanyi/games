@@ -1,9 +1,9 @@
 // The game component: a canvas the loop draws on every frame, with React
 // screens on top that re-render only when their `View` changes.
 import { useEffect, useRef, useState } from "react";
-import { unlock } from "./audio.ts";
-import { HEIGHT, WIDTH } from "./level.ts";
-import { draw } from "./render.ts";
+import { unlock } from "../runtime/audio.ts";
+import { HEIGHT, WIDTH } from "../game/config.ts";
+import { draw } from "../rendering/render.ts";
 import {
   Controls,
   GameOverScreen,
@@ -24,8 +24,9 @@ import {
   toggleMuted,
   type View,
   viewOf,
-} from "./session.ts";
-import { DT, type ShopItem } from "./sim.ts";
+} from "../runtime/session.ts";
+import { DT } from "../game/config.ts";
+import type { ShopItem } from "../game/shop.ts";
 
 export function GoldMiner() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -57,6 +58,7 @@ export function GoldMiner() {
     let frameId = 0;
     let last = performance.now();
     let pending = 0;
+    let displayed = viewOf(session);
     const frame = (now: number) => {
       pending += Math.min((now - last) / 1000, 0.25);
       last = now;
@@ -66,7 +68,10 @@ export function GoldMiner() {
       }
       draw(ctx, session.game);
       const next = viewOf(session);
-      setView((current) => (sameView(current, next) ? current : next));
+      if (!sameView(displayed, next)) {
+        displayed = next;
+        setView(next);
+      }
       frameId = requestAnimationFrame(frame);
     };
     frameId = requestAnimationFrame(frame);

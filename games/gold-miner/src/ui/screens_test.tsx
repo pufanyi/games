@@ -1,7 +1,7 @@
 import { assert, assertStringIncludes } from "@std/assert";
 import { renderToStaticMarkup } from "react-dom/server";
 import { GameOverScreen, ShopScreen } from "./screens.tsx";
-import type { View } from "./session.ts";
+import type { View } from "../runtime/session.ts";
 
 const noop = () => {};
 

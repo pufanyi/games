@@ -145,6 +145,23 @@ that line too (and vice versa).
 | Gold Miner | v1: single-player complete; multiplayer not started | `games/gold-miner/DESIGN.md` |
 | Billiards  | Physics engine built; no playable build yet         | `games/billiards/DESIGN.md`  |
 
+### Gold Miner source organization
+
+`games/gold-miner/src/` separates responsibilities:
+
+- `game/`: deterministic simulation, level generation, item definitions, shared
+  tuning constants, shop rules, and seeded RNG. No browser or React imports.
+- `rendering/`: Canvas drawing, scenery, sprites, and painting helpers; reads
+  game state without mutating it.
+- `runtime/`: browser session, audio, and local storage.
+- `ui/`: React menus, controls, the Canvas host, and CSS. React receives view
+  updates only when the view changes; Canvas owns frame rendering.
+- `fonts/`: bundled font and license; `main.tsx` is the browser entry point.
+
+Tests live beside their modules. See `games/gold-miner/CALIBRATION.md` for
+historical evidence, approximate tuning, and outstanding fidelity gaps. Do not
+present estimates as measured original-game constants.
+
 ## Coding standard
 
 ### Platform (`platform/`)
@@ -180,6 +197,10 @@ that line too (and vice versa).
 - A game never imports platform code, and must run when opened directly.
 
 ### Everywhere
+
+- Use English for all development artifacts: identifiers, comments, UI copy,
+  documentation, test descriptions, commit messages, and pull requests. This is
+  a persistent project preference; conversation can follow the user's language.
 
 - Permissions stay scoped: `--allow-net --allow-read=.` for servers. Don't
   switch tasks to `-A`; add the specific `--allow-*` flag a new feature needs.

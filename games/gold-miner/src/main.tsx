@@ -1,7 +1,7 @@
-import "./style.css";
+import "./ui/style.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { GoldMiner } from "./GoldMiner.tsx";
+import { GoldMiner } from "./ui/GoldMiner.tsx";
 
 // The canvas draws text in this font but can't trigger loading it.
 document.fonts.load('20px "Lilita One"');

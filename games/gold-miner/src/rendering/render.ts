@@ -1,5 +1,5 @@
 // Draws a GameState onto a 2D canvas. Reads the state, never changes it.
-import { GROUND_Y, WIDTH } from "./level.ts";
+import { GROUND_Y, WIDTH } from "../game/config.ts";
 import {
   circlePath,
   type Ctx,
@@ -16,10 +16,9 @@ import {
   clawTip,
   type Effect,
   type GameState,
-  PIVOT_Y,
   type Player,
-  TICK_RATE,
-} from "./sim.ts";
+} from "../game/sim.ts";
+import { PIVOT_Y, TICK_RATE } from "../game/config.ts";
 import { drawItem, drawPocket } from "./sprites.ts";
 
 /** Radius of the pulley wheel; the rope leaves its bottom at PIVOT_Y. */

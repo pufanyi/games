@@ -24,17 +24,19 @@ runs it on its own with hot reload.
 
 ## Items in the mine
 
-Relative values only; pick numbers and tune them by playing.
+Match the classic single-player game where historical evidence is available. See
+[CALIBRATION.md](CALIBRATION.md) for supported values, estimates, and remaining
+differences.
 
-| Item                        | Value       | Weight              | Notes                                        |
-| --------------------------- | ----------- | ------------------- | -------------------------------------------- |
-| Gold (small, medium, large) | Low to high | Light to very heavy | Large gold is the risky grab                 |
-| Rock (small, large)         | Very low    | Heavy               | Wastes time                                  |
-| Diamond                     | Very high   | Very light          | Rare                                         |
-| Mystery bag                 | Random      | Light               | Money, a free dynamite, or a strength boost  |
-| Mole or pig                 | Low         | Light               | Walks back and forth; some carry a diamond   |
-| TNT barrel                  | 0           | –                   | Explodes when grabbed, destroys nearby items |
-| Bone or skull               | Very low    | Light               | Clutter                                      |
+| Item                              | Value             | Weight              | Notes                                        |
+| --------------------------------- | ----------------- | ------------------- | -------------------------------------------- |
+| Gold (small, medium, large, huge) | 50, 100, 250, 500 | Light to very heavy | Large gold is the risky grab                 |
+| Rock (small, large)               | Very low          | Heavy               | Wastes time                                  |
+| Diamond                           | Very high         | Very light          | Rare                                         |
+| Mystery bag                       | Random            | Variable            | Money, a free dynamite, or a strength boost  |
+| Mole or pig                       | Low               | Light               | Walks back and forth; some carry a diamond   |
+| TNT barrel                        | 0                 | –                   | Explodes when grabbed, destroys nearby items |
+| Bone or skull                     | Very low          | Light               | Clutter                                      |
 
 ## Levels
 
@@ -46,7 +48,8 @@ Relative values only; pick numbers and tune them by playing.
 
 A random selection at random prices on each visit:
 
-- [x] **Dynamite**: use while reeling back to destroy what you're holding
+- [x] **Dynamite**: use while reeling back to destroy what you're holding,
+      damage nearby items, and trigger nearby TNT
 - [x] **Strength drink**: reel back faster next level
 - [x] **Lucky clover**: better mystery bags
 - [x] **Rock collector's book**: rocks are worth more
@@ -72,18 +75,18 @@ A random selection at random prices on each visit:
 Cartoon vector art in the style of classic Flash games, drawn entirely in code
 (no image files). Keep new art consistent with it:
 
-- [x] **Ink outlines** on every sprite (`INK` in `src/paint.ts`, about 2px),
-      over a gradient body lit from the top left, with a glossy highlight
+- [x] **Ink outlines** on every sprite (`INK` in `src/rendering/paint.ts`, about
+      2px), over a gradient body lit from the top left, with a glossy highlight
 - [x] **Palette:** golden-hour sky, terracotta mesas, sienna-to-umber dirt
       strata, warm gold, cool cyan diamonds, wood browns for UI
-- [x] **Scenery** (`src/scenery.ts`): sky with sun and drifting clouds, mesas,
-      layered dirt with speckles, pebbles, roots, and two hidden fossils; static
-      layers are painted once into offscreen canvases
-- [x] **Sprites** (`src/sprites.ts`): faceted gold with twinkles, cracked rocks,
-      cut diamonds, tied sacks, barrels of TNT with a lit fuse, and moles;
-      buried items sit in a darker pocket of dirt
-- [x] **Miner and winch** (`src/render.ts`): a bearded prospector in a hard hat
-      turning a crank, belted to a pulley on an A-frame
+- [x] **Scenery** (`src/rendering/scenery.ts`): sky with sun and drifting
+      clouds, mesas, layered dirt with speckles, pebbles, roots, and two hidden
+      fossils; static layers are painted once into offscreen canvases
+- [x] **Sprites** (`src/rendering/sprites.ts`): faceted gold with twinkles,
+      cracked rocks, cut diamonds, tied sacks, barrels of TNT with a lit fuse,
+      and moles; buried items sit in a darker pocket of dirt
+- [x] **Miner and winch** (`src/rendering/render.ts`): a bearded prospector in a
+      hard hat turning a crank, belted to a pulley on an A-frame
 - [x] **Effects:** popping money text; explosions with a flash, shock ring,
       smoke, and debris
 - [x] **HUD:** wooden signboards with coin and clock icons, boost tags, and
@@ -106,13 +109,23 @@ Cartoon vector art in the style of classic Flash games, drawn entirely in code
 - [x] Fills its window and scales to it, since it runs in the platform's iframe
       and must also work opened directly at `/games/gold-miner/`
 
+### Source boundaries
+
+- `src/game/`: simulation and seeded level generation; tuning lives in
+  `config.ts`, item denominations and weights in `items.ts`, shop rules in
+  `shop.ts`.
+- `src/rendering/`: Canvas-only presentation.
+- `src/runtime/`: browser session, audio, and persistence.
+- `src/ui/`: React overlays, input/Canvas host, and styles.
+- `src/main.tsx`: browser entry; `src/fonts/`: licensed font assets.
+
 ### Keep the game logic separate from the screen
 
 Do this from the start, even for single-player. It makes local and online
 multiplayer a matter of where the inputs come from.
 
 ```ts
-// sim.ts — no DOM, no canvas, no Date.now(), no Math.random()
+// src/game/sim.ts — no DOM, no canvas, no Date.now(), no Math.random()
 export function createGame(seed: number): GameState; // plain, JSON-serializable
 export function step(state: GameState, inputs: Input[]): void; // one fixed tick
 // inputs: [{ player: 0, action: "fire" | "dynamite" }]

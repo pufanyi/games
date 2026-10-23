@@ -1,5 +1,5 @@
 // Item sprites: gold, rocks, diamonds, bags, bones, TNT, and moles.
-import type { Item } from "./level.ts";
+import type { Item } from "../game/items.ts";
 import {
   blobPath,
   circlePath,
@@ -35,6 +35,7 @@ export function drawItem(ctx: Ctx, item: Item, tick: number) {
     case "goldSmall":
     case "goldMedium":
     case "goldLarge":
+    case "goldHuge":
       return drawGold(ctx, item, tick);
     case "rockSmall":
     case "rockLarge":
