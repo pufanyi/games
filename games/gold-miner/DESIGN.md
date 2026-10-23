@@ -95,8 +95,11 @@ use the same `INK` outline). Keep new art consistent with it:
       turning the reel's crank with both hands (two-bone arms that follow the
       crank). His face reacts: blinks at rest, strains and sweats hauling heavy
       loads, grins at a good payout, frowns at a poor one
-- [x] **Claw:** a steel grab with a shackle, a hinge block, and two hooked jaws
-      that close on a catch
+- [x] **Claw** (`src/rendering/claw.ts`): a steel grab with the rope's end bound
+      in twine through a D-shackle, a bevelled housing with rivets and a brass
+      pivot bolt, a third prong behind, and two hooked jaws with teeth, a bevel,
+      and darkened tips. The jaws pivot shut around a catch, which is drawn
+      between the back prong and the jaws so it sits in their grip
 - [x] **Effects:** popping money text; explosions with a flash, shock ring,
       smoke, and debris
 - [x] **HUD:** wooden signboards with coin and clock icons, boost tags, and

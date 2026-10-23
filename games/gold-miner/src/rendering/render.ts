@@ -11,6 +11,7 @@ import {
   woodBoard,
 } from "./paint.ts";
 import { DECK_Y, drawCamp, drawRig } from "./camp.ts";
+import { drawClaw } from "./claw.ts";
 import { drawScenery } from "./scenery.ts";
 import {
   clawTip,
@@ -51,76 +52,24 @@ function drawPlayer(ctx: Ctx, state: GameState, player: Player) {
   ctx.setLineDash([]);
 
   drawCamp(ctx, state, player);
-  if (claw.item) drawItem(ctx, claw.item, state.tick);
-  drawClaw(ctx, tip.x, tip.y, claw.angle, claw.item !== null);
-}
-
-/**
- * A steel grab: a shackle on the rope, a hinged block, and two hooked jaws
- * that close around whatever it catches.
- */
-function drawClaw(
-  ctx: Ctx,
-  x: number,
-  y: number,
-  angle: number,
-  closed: boolean,
-) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(-angle);
-  const open = closed ? 0 : 1;
-  for (const side of [-1, 1]) {
-    const s = side;
-    ctx.beginPath();
-    ctx.moveTo(s * 3, 3);
-    ctx.bezierCurveTo(
-      s * (13 + open * 6),
-      5,
-      s * (15 + open * 6),
-      16,
-      s * (5 + open * 6),
-      23,
-    );
-    ctx.lineTo(s * (2 + open * 4), 20);
-    ctx.bezierCurveTo(
-      s * (8 + open * 5),
-      15,
-      s * (8 + open * 4),
-      9,
-      s * 1,
-      7,
-    );
-    ctx.closePath();
-    const steel = ctx.createLinearGradient(s * 4, 0, s * 16, 20);
-    steel.addColorStop(0, "#e2e8ed");
-    steel.addColorStop(0.5, "#9aa6b1");
-    steel.addColorStop(1, "#5e6a75");
-    ctx.fillStyle = steel;
-    ctx.fill();
-    ink(ctx, 1.8);
-  }
-  // Shackle where the rope ties on.
-  ctx.beginPath();
-  ctx.ellipse(0, -7, 3.2, 4, 0, 0, Math.PI * 2);
-  ink(ctx, 3.6);
-  ctx.strokeStyle = "#9aa6b1";
-  ctx.lineWidth = 1.6;
-  ctx.stroke();
-  // Hinge block with a brass pin.
-  ctx.beginPath();
-  ctx.roundRect(-7.5, -4, 15, 10, 3.5);
-  const block = ctx.createLinearGradient(0, -4, 0, 6);
-  block.addColorStop(0, "#a3aeb8");
-  block.addColorStop(1, "#56626d");
-  ctx.fillStyle = block;
-  ctx.fill();
-  ink(ctx, 2);
-  circlePath(ctx, 0, 1, 2.4);
-  ctx.fillStyle = "#e8c35a";
-  ctx.fill();
-  ink(ctx, 1);
-  ctx.restore();
+  const held = claw.item;
+  drawClaw(
+    ctx,
+    tip.x,
+    tip.y,
+    claw.angle,
+    held
+      ? () => {
+        // Drawn a little below where it hangs in the simulation, so it sits
+        // down in the jaws' grip instead of hiding behind the housing.
+        const drop = held.r * 0.2 + 7;
+        ctx.save();
+        ctx.translate(Math.sin(claw.angle) * drop, Math.cos(claw.angle) * drop);
+        drawItem(ctx, held, state.tick);
+        ctx.restore();
+      }
+      : undefined,
+  );
 }
 
 function drawEffect(ctx: Ctx, effect: Effect) {
