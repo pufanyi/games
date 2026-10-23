@@ -23,12 +23,13 @@ from scratch in plain HTML/CSS/JS. There is no Flash emulation (no Ruffle, no
   - `main.ts`: local Deno server (`Deno.serve` + `serveDir` from `@std/http`).
   - `worker.ts`: Cloudflare Worker, the production deploy. Keep `app.ts`,
     `views.ts`, and `games.ts` free of `Deno.*` APIs so it still bundles.
-- Deploy: Cloudflare Workers Builds runs `npx wrangler deploy` on push, using
-  `wrangler.jsonc`. `static/` and `games/` are uploaded as Workers Static Assets
-  (`.assetsignore` filters out everything else in the repo root);
-  `run_worker_first` sends every request through `worker.ts`, which reads files
-  via the `ASSETS` binding. The Worker `name` must match the Worker in the
-  Cloudflare dashboard.
+- Deploy: Cloudflare Workers Builds runs `npx wrangler deploy` on pushes to
+  `main` and `npx wrangler preview` on other branches (which is why
+  `wrangler.jsonc` keeps an empty `previews` block). `static/` and `games/` are
+  uploaded as Workers Static Assets (`.assetsignore` filters out everything else
+  in the repo root); `run_worker_first` sends every request through `worker.ts`,
+  which reads files via the `ASSETS` binding. The Worker `name` must match the
+  Worker in the Cloudflare dashboard.
 - The Deno agent skill lives in `.agents/skills/deno` (symlinked into
   `.claude/skills/deno`, pinned in `skills-lock.json`). For version-accurate CLI
   details, prefer `deno <cmd> --help`.
