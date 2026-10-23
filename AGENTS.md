@@ -38,13 +38,14 @@ decision, not a gap.
     `platform/app.tsx`, `pages.tsx`, and `games.ts` free of `Deno.*` and
     `node:*` APIs so it still bundles.
   - `platform/dev.ts`: the Vite dev server.
-- Deploy: Cloudflare Workers Builds runs `npx wrangler deploy` on push, using
-  `wrangler.jsonc`. Its `build.command` runs `deno task build` first (through
-  the `deno` npm package, since the build image has no Deno). `dist/` is
-  uploaded as Workers Static Assets; `run_worker_first` sends every request
-  through `worker.ts`, which reads files via the `ASSETS` binding.
-  `tsconfig.worker.json` only tells Wrangler's bundler how to compile JSX. The
-  Worker `name` must match the Worker in the Cloudflare dashboard.
+- Deploy: Cloudflare Workers Builds runs `npx wrangler deploy` on pushes to
+  `main` and `npx wrangler preview` on other branches (which is why
+  `wrangler.jsonc` keeps an empty `previews` block). Its `build.command` runs
+  `deno task build` first (through the `deno` npm package, since the build image
+  has no Deno). `dist/` is uploaded as Workers Static Assets; `run_worker_first`
+  sends every request through `worker.ts`, which reads files via the `ASSETS`
+  binding. `tsconfig.worker.json` only tells Wrangler's bundler how to compile
+  JSX. The Worker `name` must match the Worker in the Cloudflare dashboard.
 - The Deno agent skill lives in `.agents/skills/deno` (symlinked into
   `.claude/skills/deno`, pinned in `skills-lock.json`). For version-accurate CLI
   details, prefer `deno <cmd> --help`.
