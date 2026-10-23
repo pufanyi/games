@@ -13,11 +13,12 @@ games.pufanyi.com. The architecture is in
 [`docs/architecture.md`](docs/architecture.md); read it before changing how the
 platform and games fit together.
 
-- **Platform** (`platform/`): React + TypeScript. Catalog, game pages, and an
-  embedded player.
+- **Platform** (`platform/`): React + TypeScript. Catalog, coming-soon pages,
+  and direct game navigation.
 - **Games** (`games/<slug>/`): independent web apps, in any browser technology,
-  each publishing a static build with an `index.html`. They run inside an iframe
-  on the platform and also work on their own.
+  each publishing a static build with an `index.html`. They open directly in the
+  current tab at `/games/<slug>/`, filling the browser viewport without an
+  iframe.
 
 There is no Flash emulation (no Ruffle, no `.swf` files) — that is a deliberate
 decision, not a gap.
@@ -70,7 +71,7 @@ platform/
   app.tsx          routing + server rendering: /, /play/<slug>, /games/<slug>/...
   pages.tsx        React pages (catalog, play, not found)
   client.tsx       browser entry: hydrates the server-rendered page
-  games.ts         game registry (slug, title, description, tags, aspectRatio)
+  games.ts         game registry (slug, title, description, tags)
   game_builds.ts   where each game's published build comes from
   dev.ts           Vite dev-server plugin
   styles.css       platform styles
@@ -113,7 +114,7 @@ that line too (and vice versa).
 ## Adding a game
 
 1. Add an entry to `games` in `platform/games.ts`. The `slug` is the folder name
-   and URL; `aspectRatio` is the shape the player keeps when scaling.
+   and URL.
 2. Create `games/<slug>/`, with either:
    - a static site with an `index.html`, published as-is (minus `DESIGN.md`,
      dotfiles, and `node_modules`), or
@@ -128,9 +129,11 @@ that line too (and vice versa).
 - Games must work on their own at `/games/<slug>/`: relative asset paths
   (`./game.js`), and no imports from `platform/` or other games. `/games/<slug>`
   redirects to `/games/<slug>/` so relative paths resolve.
-- The game runs in an iframe that gets keyboard focus when the play page loads.
-  It should fill its window (`100vw` × `100vh`) and scale to its size, since the
-  player resizes it to fit the screen and for fullscreen.
+- Catalog cards open published games directly at `/games/<slug>/` in the current
+  tab. Legacy `/play/<slug>` URLs redirect there; unbuilt games retain their
+  coming-soon page. Use browser Back to return to the catalog.
+- Games should fill their window (`100vw` × `100vh`) and scale to its size. Each
+  game owns its responsive layout; there is no platform player wrapper.
 - The remaining `sample-*` entries in `platform/games.ts` are layout
   placeholders; remove them as real games are added.
 - A game can have a `games/<slug>/DESIGN.md` with its requirements as a

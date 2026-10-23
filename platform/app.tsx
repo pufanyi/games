@@ -95,9 +95,16 @@ export function createHandler(files: Files, assets: Assets) {
     const play = pathname.match(/^\/play\/([^/]+)\/?$/);
     if (play) {
       const game = await listing(play[1]);
-      return game
-        ? html({ name: "play", game })
-        : html({ name: "notFound" }, 404);
+      if (!game) return html({ name: "notFound" }, 404);
+      if (game.playable) {
+        const destination = new URL(
+          `/games/${encodeURIComponent(game.slug)}/`,
+          url,
+        );
+        destination.search = url.search;
+        return Response.redirect(destination, 302);
+      }
+      return html({ name: "play", game });
     }
 
     const build = pathname.match(/^\/games\/([^/]+)(\/.*)?$/);
