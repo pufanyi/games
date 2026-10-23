@@ -71,28 +71,29 @@ Each ball has a position and velocity on the table plane and a full 3D angular
 velocity. Balls stay on the slate: the first version has no jump shots or balls
 flying off the table (see [Later](#later)).
 
-- [ ] **Ball states**, each with closed-form motion: stationary, spinning in
+- [x] **Ball states**, each with closed-form motion: stationary, spinning in
       place, sliding, rolling, pocketed
-- [ ] **Sliding**: the contact point slips on the cloth, and sliding friction
+- [x] **Sliding**: the contact point slips on the cloth, and sliding friction
       both slows the ball and changes its spin until it rolls. This is what
       makes draw, follow and stun work
-- [ ] **Rolling**: rolling resistance slows the ball to a stop
-- [ ] **Spin about the vertical axis** (side spin) decays separately, and
+- [x] **Rolling**: rolling resistance slows the ball to a stop
+- [x] **Spin about the vertical axis** (side spin) decays separately, and
       matters for cushions and throw
-- [ ] **Ball–ball**: nearly elastic, plus friction between the balls, which
+- [x] **Ball–ball**: nearly elastic, plus friction between the balls, which
       gives cut-induced and spin-induced throw (the object ball goes slightly
       off the line of centers)
-- [ ] **Ball–cushion**: the cushion nose is above the ball's center, so a
+- [x] **Ball–cushion**: the cushion nose is above the ball's center, so a
       cushion hit changes spin as well as speed; side spin changes the rebound
-      angle (Han 2005)
-- [ ] **Cue strike**: the tip hits at an offset from the center (side spin,
+      angle (set up as in Han 2005: an impulse at the nose with friction)
+- [x] **Cue strike**: the tip hits at an offset from the center (side spin,
       draw, follow) and at an elevation angle (swerve, massé). Side spin pushes
       the cue ball slightly off the aim line (squirt). Offsets past about half
       the ball's radius miscue
-- [ ] **Pockets**: the jaws are real geometry (straight cushion segments ending
-      in rounded points), so a ball can rattle in the jaws and stay out. A ball
-      drops once its center crosses the pocket opening
-- [ ] **Racking**: seeded tiny gaps between racked balls, as on a real table, so
+- [x] **Pockets**: the jaws are real geometry (straight cushion segments at
+      WPA's jaw angles), so a ball can rattle in the jaws and stay out. A ball
+      drops once its center is over the hole in the slate
+- [ ] Rounded jaw points (they're sharp for now), if rattles look wrong
+- [x] **Racking**: seeded tiny gaps between racked balls, as on a real table, so
       every break is different but replays exactly from its seed
 
 ### Starting values
@@ -109,9 +110,14 @@ them all in one `constants.ts`.
 | Cloth sliding friction             | 0.2                     |
 | Cloth rolling resistance           | 0.01                    |
 | Ball–ball restitution, friction    | 0.95, ~0.06             |
-| Ball–cushion restitution, friction | 0.85, 0.2               |
+| Ball–cushion restitution, friction | 0.75, 0.2 (see below)   |
 | Cue mass                           | ~570 g                  |
 | Max cue ball speed (hard break)    | ~12 m/s                 |
+
+Cushion restitution is lower than pooltool's 0.85 because with the nose above
+the ball's center, topspin adds to the rebound: at 0.75, a rolling ball hit
+straight in comes back at about 0.85 of its speed, which is what real cushions
+do.
 
 ### Simulating a shot
 
@@ -119,26 +125,28 @@ A shot is fully decided the moment the cue hits the ball, so the whole shot is
 simulated up front, then played back.
 
 ```ts
-// physics/ — no DOM, no canvas, no Date.now(), no Math.random()
-simulateShot(table: TableState, shot: Shot): ShotResult;
-// Shot: { aim: [x, y] unit vector, speed, tipOffset: [side, height], elevation }
-// ShotResult: { frames, events, final: TableState }
+// src/physics/ — no DOM, no canvas, no Date.now(), no Math.random()
+simulateShot(balls: Ball[], shot: Shot): ShotResult;
+// Shot: { cue: [x, y, z] stroke direction (z < 0 is elevated), speed,
+//         tip: [right, up] as fractions of the radius }
+// ShotResult: { balls (at rest), events, frames, duration }
 // events: ball–ball, ball–cushion, pocketed, in time order
 ```
 
-- [ ] Fixed substeps of 1 ms. Within a substep each ball moves along its exact
+- [x] Fixed substeps of 1 ms. Within a substep each ball moves along its exact
       closed-form path for its state. Collisions are found by treating motion
       within the substep as straight (the error is about 1 µm at the hardest
       deceleration) and solving for the contact time, then handled in time order
-- [ ] At 12 m/s a ball moves 1.2 cm per substep, under half its radius, so
+- [x] At 12 m/s a ball moves 1.2 cm per substep, under half its radius, so
       nothing tunnels through another ball or a cushion
-- [ ] Balls touching at exactly the same moment (frozen balls, the break) are
+- [x] Balls touching at exactly the same moment (frozen balls, the break) are
       handled one at a time in ball-number order, so the result is repeatable
-- [ ] The shot ends when every ball has stopped, with a cap on simulated time
-- [ ] Record frames (positions plus angular velocity) at 120 per second for
-      playback, and the event list for the rules
-- [ ] A full shot simulates in well under a frame's time on a phone; if the
-      break is slow, add a uniform grid for broad-phase collision checks
+- [x] The shot ends when every ball has stopped, with a cap on simulated time
+- [x] Record frames (positions plus angular velocity) at 125 per second and at
+      every collision for playback, and the event list for the rules
+- [ ] A full shot simulates without a noticeable pause on a phone. A hard break
+      takes 10–20 ms on a laptop; measure on a phone once there's a page to run,
+      and if it's slow, add a uniform grid for broad-phase collision checks
 
 A fully event-based simulator (pooltool's approach, solving polynomials for the
 exact time of every collision) is exact, but its root solving is hard to make
@@ -150,14 +158,14 @@ below anything visible, so we start with substeps.
 Both players' browsers must get the same result from the same shot, and the same
 seed and shots must replay identically.
 
-- [ ] The simulation uses only `+ - * /` and `Math.sqrt`, which JavaScript
+- [x] The simulation uses only `+ - * /` and `Math.sqrt`, which JavaScript
       computes identically everywhere. `Math.sin`, `cos`, `exp`, `atan2`,
       `hypot` and `pow` can differ in the last bit between browsers, and pool is
       chaotic enough that one bit changes the outcome after a few collisions. If
       a formula needs one of them, write our own approximation from arithmetic
-- [ ] The aim is passed as a unit vector, so the trig that turns a mouse angle
-      into it happens in the input code, outside the simulation
-- [ ] The seeded RNG lives in the state, never `Math.random()`
+- [x] The cue's direction is passed as a vector, so the trig that turns a mouse
+      angle into it happens in the input code, outside the simulation
+- [x] The seeded RNG lives in the state, never `Math.random()`
 - [ ] Ball orientation (for drawing numbers and stripes rolling) is integrated
       by the renderer from the recorded angular velocity, so it isn't part of
       the simulated state and can use trig
@@ -167,17 +175,17 @@ seed and shots must replay identically.
 `deno test` against results from the literature, so "realistic" is checked, not
 eyeballed:
 
-- [ ] A sliding center-ball hit starts rolling at 5/7 of its starting speed
-- [ ] Stun shot, full hit: the cue ball stops dead
-- [ ] Stun shot, cut: the cue ball leaves along the tangent line (90° from the
+- [x] A sliding center-ball hit starts rolling at 5/7 of its starting speed
+- [x] Stun shot, full hit: the cue ball stops dead
+- [x] Stun shot, cut: the cue ball leaves along the tangent line (90° from the
       object ball), give or take throw
-- [ ] Rolling cue ball, half-ball hit: deflects about 30° (the 30° rule)
-- [ ] Draw comes back, follow goes through
-- [ ] Throw on a slow half-ball cut is a few degrees, in the direction Alciatore
+- [x] Rolling cue ball, half-ball hit: deflects about 30° (the 30° rule)
+- [x] Draw comes back, follow goes through
+- [x] Throw on a slow half-ball cut is a few degrees, in the direction Alciatore
       measures
-- [ ] Momentum is conserved in ball–ball hits and energy never increases
-- [ ] No tunneling at maximum speed
-- [ ] Same table and shot give bit-identical results
+- [x] Momentum is conserved in ball–ball hits and energy never increases
+- [x] No tunneling at maximum speed
+- [x] Same table and shot give bit-identical results
 
 ## Rules
 
@@ -255,6 +263,9 @@ games/billiards/src/
 ```
 
 ## Multiplayer
+
+**On hold.** Single-player comes first, and multiplayer will be designed again
+before it's built; the notes below are only a starting point.
 
 Build in this order.
 
