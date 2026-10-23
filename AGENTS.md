@@ -24,10 +24,14 @@ from scratch in plain HTML/CSS/JS. There is no Flash emulation (no Ruffle, no
 - Linting is [Biome](https://biomejs.dev) (`biome.json`, recommended preset),
   run through Deno from npm. `deno lint` is not used. Biome's formatter and
   assist (import sorting) are disabled so they don't fight `deno fmt`, which
-  owns formatting. Biome is pinned in `deno.json` and the `$schema` URL in
-  `biome.json`; bump both together.
-- CI is GitHub Actions (`.github/workflows/ci.yml`): fmt check, Biome lint, type
-  check, and tests on every PR and push to `main`, on Deno `2.9.x`.
+  owns formatting. Biome's version is pinned twice and must be bumped together:
+  `deno.json` (used by `deno task lint` locally) and the `$schema` URL in
+  `biome.json` (read by `biomejs/setup-biome` in CI). CI fails if they differ.
+- CI is GitHub Actions (`.github/workflows/ci.yml`), on every PR and push to
+  `main`, as two parallel jobs:
+  - `biome`: Biome's official action plus `biome ci`, which posts lint findings
+    as inline PR annotations.
+  - `deno`: fmt check, type check, and tests on Deno `2.9.x`.
 
 ## Layout
 
