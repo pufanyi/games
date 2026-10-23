@@ -16,11 +16,26 @@ Deno.test("landing page lists every game", async () => {
   }
 });
 
-Deno.test("unbuilt game shows a coming soon page", async () => {
-  const [game] = games;
-  const res = await get(`/games/${game.slug}/`);
-  assertEquals(res.status, 200);
-  assertStringIncludes(await res.text(), "hasn't been built yet");
+// Picked at load time so the test keeps working as games get built.
+const unbuilt = games.find((game) => {
+  try {
+    Deno.statSync(
+      new URL(`./games/${game.slug}/index.html`, import.meta.url),
+    );
+    return false;
+  } catch {
+    return true;
+  }
+});
+
+Deno.test({
+  name: "unbuilt game shows a coming soon page",
+  ignore: !unbuilt,
+  async fn() {
+    const res = await get(`/games/${unbuilt?.slug}/`);
+    assertEquals(res.status, 200);
+    assertStringIncludes(await res.text(), "hasn't been built yet");
+  },
 });
 
 Deno.test("game path without trailing slash redirects", async () => {
