@@ -29,15 +29,16 @@ export const games: Game[] = [
     tags: ["sports", "classic"],
     aspectRatio: [16, 9],
   },
+  {
+    slug: "bomb-it-3",
+    title: "Bomb It 3",
+    description:
+      "Little robots, big adventures. Bomb, battle, splash, and race through four colorful worlds.",
+    tags: ["arcade", "two-player", "classic"],
+    aspectRatio: [4, 3],
+  },
   // The sample-* entries are placeholders to show the layout — remove them as
   // real games are written.
-  {
-    slug: "sample-platformer",
-    title: "Sample Platformer",
-    description: "Run, jump, and collect coins across side-scrolling levels.",
-    tags: ["action", "platformer"],
-    aspectRatio: [16, 9],
-  },
   {
     slug: "sample-puzzle",
     title: "Sample Puzzle",

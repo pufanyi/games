@@ -467,6 +467,15 @@
           "npm:vite@8.3.4"
         ]
       },
+      "games/bomb-it-3": {
+        "dependencies": [
+          "jsr:@std/assert@1",
+          "npm:@vitejs/plugin-react@6.1.2",
+          "npm:react-dom@19.3.0",
+          "npm:react@19.3.0",
+          "npm:vite@8.3.4"
+        ]
+      },
       "games/gold-miner": {
         "dependencies": [
           "jsr:@std/assert@1",

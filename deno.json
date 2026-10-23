@@ -1,7 +1,8 @@
 {
   "workspace": [
     "./games/billiards",
-    "./games/gold-miner"
+    "./games/gold-miner",
+    "./games/bomb-it-3"
   ],
   "nodeModulesDir": "auto",
   "compilerOptions": {
