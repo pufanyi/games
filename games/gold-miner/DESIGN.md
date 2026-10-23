@@ -4,8 +4,8 @@ A remake of the classic Flash game. The miner swings a claw from the top of the
 screen, fires it to grab gold and gems, and has to hit a money goal before time
 runs out. Check items off as they're built.
 
-Not built yet: until `index.html` exists here, the landing page shows this game
-as "Coming soon".
+Not built yet: until it publishes a build, the catalog shows this game as
+"Coming soon".
 
 ## Core loop
 
@@ -71,18 +71,23 @@ A random selection at random prices on each visit:
 - [ ] Canvas 2D at a fixed internal resolution, scaled to fit the screen
 - [ ] `requestAnimationFrame` for drawing over a **fixed-timestep** update (e.g.
       60 ticks/s), so the physics is the same at any frame rate
-- [ ] Browser-ready JS modules beside `index.html` (the server doesn't compile
-      TS); optionally `// @ts-check` with JSDoc for type checking
+- [ ] A standalone TypeScript app built with Vite: its own `deno.json` with a
+      `build` task writing to `games/gold-miner/dist/` (see `AGENTS.md`)
+- [ ] Game logic and canvas drawing in plain TS; title, pause, shop, and
+      game-over screens as React components over the canvas, which only
+      re-render when what they show changes (never every frame)
+- [ ] Fills its window and scales to it, since it runs in the platform's iframe
+      and must also work opened directly at `/games/gold-miner/`
 
 ### Keep the game logic separate from the screen
 
 Do this from the start, even for single-player. It makes local and online
 multiplayer a matter of where the inputs come from.
 
-```js
-// sim.js — no DOM, no canvas, no Date.now(), no Math.random()
-export function createGame(seed) {/* returns plain, JSON-serializable state */}
-export function step(state, inputs) {/* advances one fixed tick */}
+```ts
+// sim.ts — no DOM, no canvas, no Date.now(), no Math.random()
+export function createGame(seed: number): GameState; // plain, JSON-serializable
+export function step(state: GameState, inputs: Input[]): void; // one fixed tick
 // inputs: [{ player: 0, action: "fire" | "dynamite" }]
 ```
 
@@ -108,12 +113,12 @@ with their own claw.
 
 Two browsers can't find each other without some third party.
 
-| Option                                                       | Truly no backend?               | Reliability | Notes                                                                                                                                                                                     |
-| ------------------------------------------------------------ | ------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| WebRTC through [Trystero](https://github.com/dmotz/trystero) | Yes                             | Fair        | Peers find each other through free public services (BitTorrent trackers, Nostr and similar), then connect directly. Some networks block direct connections without a relay (TURN) server. |
-| PeerJS                                                       | Uses PeerJS's free cloud server | Fair        | Simpler API; depends on a hosted service you don't control                                                                                                                                |
-| WebSocket relay in the Deno server                           | No                              | Best        | `Deno.upgradeWebSocket` in `main.ts`, about 50 lines for rooms that pass messages along. Breaks the "games are static folders" rule in `AGENTS.md`.                                       |
-| `BroadcastChannel`                                           | Yes                             | –           | Same browser only; useful for testing with two tabs                                                                                                                                       |
+| Option                                                       | Truly no backend?               | Reliability | Notes                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------ | ------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| WebRTC through [Trystero](https://github.com/dmotz/trystero) | Yes                             | Fair        | Peers find each other through free public services (BitTorrent trackers, Nostr and similar), then connect directly. Some networks block direct connections without a relay (TURN) server.                                                                          |
+| PeerJS                                                       | Uses PeerJS's free cloud server | Fair        | Simpler API; depends on a hosted service you don't control                                                                                                                                                                                                         |
+| WebSocket relay on the platform                              | No                              | Best        | Rooms that pass messages along, run by the platform's Cloudflare Worker (likely a Durable Object). A platform feature, so the game uses it only through the optional platform integration in `docs/architecture.md`, and must still work single-player without it. |
+| `BroadcastChannel`                                           | Yes                             | –           | Same browser only; useful for testing with two tabs                                                                                                                                                                                                                |
 
 - [ ] **Decision:** WebSocket relay (recommended, most reliable) or Trystero
       (stays a static site)?

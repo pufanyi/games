@@ -1,29 +1,27 @@
+// Deno entry point: serves the production build in `dist/` (run
+// `deno task build` first). For development, use `deno task dev` instead.
 import { serveDir } from "@std/http/file-server";
-import { createHandler } from "./app.ts";
+import { BUILD_ASSETS, createHandler } from "./platform/app.tsx";
 
 const ROOT = import.meta.dirname;
 if (!ROOT) throw new Error("main.ts must be run from a local file");
-const GAMES_DIR = `${ROOT}/games`;
-const STATIC_DIR = `${ROOT}/static`;
+const DIST = `${ROOT}/dist`;
 
 async function hasIndex(slug: string): Promise<boolean> {
   try {
-    return (await Deno.stat(`${GAMES_DIR}/${slug}/index.html`)).isFile;
+    return (await Deno.stat(`${DIST}/games/${slug}/index.html`)).isFile;
   } catch (error) {
     if (error instanceof Deno.errors.NotFound) return false;
     throw error;
   }
 }
 
-// Each folder gets its own fsRoot so a path can't climb out into the repo.
+// Everything in dist/ is public, so it can be one file root.
 function serve(req: Request): Promise<Response> {
-  const { pathname } = new URL(req.url);
-  return pathname.startsWith("/static/")
-    ? serveDir(req, { fsRoot: STATIC_DIR, urlRoot: "static", quiet: true })
-    : serveDir(req, { fsRoot: GAMES_DIR, urlRoot: "games", quiet: true });
+  return serveDir(req, { fsRoot: DIST, quiet: true });
 }
 
-export const handler = createHandler({ hasIndex, serve });
+export const handler = createHandler({ hasIndex, serve }, BUILD_ASSETS);
 
 if (import.meta.main) {
   Deno.serve(handler);

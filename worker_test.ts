@@ -1,6 +1,6 @@
 import { assertEquals, assertStringIncludes } from "@std/assert";
 import worker from "./worker.ts";
-import { games } from "./games.ts";
+import { games } from "./platform/games.ts";
 
 // Stands in for the Workers ASSETS binding: serves a fixed set of paths.
 function assets(files: Record<string, string>) {
