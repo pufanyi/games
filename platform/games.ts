@@ -32,20 +32,6 @@ export const games: Game[] = [
       "Little robots, big adventures. Bomb, battle, splash, and race through four colorful worlds.",
     tags: ["arcade", "two-player", "classic"],
   },
-  // The sample-* entries are placeholders to show the layout — remove them as
-  // real games are written.
-  {
-    slug: "sample-puzzle",
-    title: "Sample Puzzle",
-    description: "Match tiles before the board fills up.",
-    tags: ["puzzle"],
-  },
-  {
-    slug: "sample-shooter",
-    title: "Sample Shooter",
-    description: "Defend the base from waves of incoming invaders.",
-    tags: ["action", "arcade"],
-  },
 ];
 
 export function findGame(slug: string): Game | undefined {
