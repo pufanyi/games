@@ -3,12 +3,20 @@
   "name": "games",
   "main": "worker.ts",
   "compatibility_date": "2026-10-01",
+  // Builds dist/ before deploying. Workers Builds has no Deno installed, so it
+  // falls back to the pinned `deno` npm package.
+  "build": {
+    "command": "sh -c 'if command -v deno >/dev/null; then deno task build; else npx --yes deno@2.9.6 task build; fi'"
+  },
+  // Only tells Wrangler's bundler to compile JSX for React's automatic
+  // runtime; Deno type-checks with deno.json.
+  "tsconfig": "./tsconfig.worker.json",
   "assets": {
-    // The repo root, filtered down to static/ and games/ by .assetsignore.
-    "directory": ".",
+    // Everything here is public: the platform's assets and every game build.
+    "directory": "./dist",
     "binding": "ASSETS",
-    // The Worker routes every request (landing page, redirects, coming-soon
-    // and 404 pages) and fetches files from ASSETS itself.
+    // The Worker routes every request (catalog, play pages, redirects, and
+    // 404s) and fetches files from ASSETS itself.
     "run_worker_first": true
   },
   // Required by `npx wrangler preview`, which Workers Builds runs for

@@ -1,2 +1,4 @@
 # Local state from `npx wrangler dev` / `deploy`.
 .wrangler/
+node_modules/
+dist/

@@ -1,7 +1,7 @@
-// Cloudflare Workers entry point. `wrangler.jsonc` uploads `static/` and
-// `games/` as static assets and runs this Worker first on every request, so
-// routing matches `main.ts`; files are read through the ASSETS binding.
-import { createHandler } from "./app.ts";
+// Cloudflare Workers entry point. `wrangler.jsonc` uploads `dist/` as static
+// assets and runs this Worker first on every request, so routing matches
+// `main.ts`; files are read through the ASSETS binding.
+import { BUILD_ASSETS, createHandler } from "./platform/app.tsx";
 
 interface Env {
   ASSETS: { fetch(input: Request | string): Promise<Response> };
@@ -19,7 +19,7 @@ export default {
         return res.ok;
       },
       serve: (req) => env.ASSETS.fetch(req),
-    });
+    }, BUILD_ASSETS);
     return handler(req);
   },
 };
