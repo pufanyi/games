@@ -21,6 +21,14 @@ export const games: Game[] = [
     tags: ["arcade", "classic"],
     aspectRatio: [4, 3],
   },
+  {
+    slug: "billiards",
+    title: "Billiards",
+    description:
+      "Clear the table against the clock, or play 8-ball with a friend online.",
+    tags: ["sports", "multiplayer", "classic"],
+    aspectRatio: [16, 9],
+  },
   // The sample-* entries are placeholders to show the layout — remove them as
   // real games are written.
   {
