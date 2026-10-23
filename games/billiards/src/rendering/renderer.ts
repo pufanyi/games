@@ -19,8 +19,8 @@ import {
   Texture,
   WebGLRenderer,
 } from "three";
-import { HEIGHT, WIDTH } from "../layout.ts";
-import type { Session } from "../session.ts";
+import { HEIGHT, WIDTH } from "./layout.ts";
+import type { Session } from "../runtime/session.ts";
 import { Balls } from "./balls.ts";
 import { type CameraView, TableCamera } from "./camera.ts";
 import { Cue } from "./cue.ts";

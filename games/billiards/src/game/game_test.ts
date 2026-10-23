@@ -11,11 +11,11 @@ import {
   shoot,
   tick,
 } from "./game.ts";
-import { type Ball, createBall } from "./physics/ball.ts";
-import type { Shot } from "./physics/cue.ts";
-import { headSpot } from "./physics/rack.ts";
-import { TABLE } from "./physics/table.ts";
-import { FOUL_PENALTY, TIME_LIMIT } from "./rules/timed.ts";
+import { type Ball, createBall } from "../physics/ball.ts";
+import type { Shot } from "../physics/cue.ts";
+import { headSpot } from "../physics/rack.ts";
+import { TABLE } from "../physics/table.ts";
+import { FOUL_PENALTY, TIME_LIMIT } from "../rules/timed.ts";
 
 const FRAME = 1 / 60;
 

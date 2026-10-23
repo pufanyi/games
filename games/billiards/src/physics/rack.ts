@@ -1,6 +1,6 @@
 import { type Ball, createBall } from "./ball.ts";
 import { BALL_RADIUS as R } from "./constants.ts";
-import { seededRandom } from "../random.ts";
+import { seededRandom } from "./random.ts";
 import { TABLE, type Table } from "./table.ts";
 
 /** A real rack is never perfectly tight; balls sit this far apart, ± jitter. */

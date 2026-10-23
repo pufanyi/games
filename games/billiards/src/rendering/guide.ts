@@ -9,11 +9,11 @@ import {
   RingGeometry,
   Vector3,
 } from "three";
-import { aimGuide } from "../aim.ts";
-import { canPlace } from "../game.ts";
+import { aimGuide } from "../game/aim.ts";
+import { canPlace } from "../game/game.ts";
 import { BALL_RADIUS as R } from "../physics/constants.ts";
 import { TABLE } from "../physics/table.ts";
-import type { Session } from "../session.ts";
+import type { Session } from "../runtime/session.ts";
 
 export class Guide {
   readonly group = new Group();

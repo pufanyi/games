@@ -282,18 +282,19 @@ pinned in this game's `deno.json`; its MIT license is bundled under
 
 ```
 games/billiards/src/
-  physics/      constants, table geometry, motion, collisions, cue, simulateShot
+  physics/      constants, table geometry, motion, collisions, cue, seeded RNG
   rules/        timed.ts (eight_ball.ts later)
-  game.ts       game state and turn flow (place → aim → shot → playback → judge)
-  aim.ts        the aim guide
-  session.ts    screens, pause, the shot being lined up, best time
-  layout.ts     reference stage size
-  rendering/    Three.js renderer, cameras, table, balls, cue, guide, textures
-                camera projection tests and visual quaternion integration
-  screens.tsx   React screens, HUD, spin and power controls
-  Billiards.tsx the component: loop, pointer and keyboard input
-  audio.ts, storage.ts, style.css, main.tsx
+  game/         game state, shot playback, and aim-guide calculations
+  runtime/      session actions, browser keyboard bindings, audio, storage
+  rendering/    Three.js renderer, cameras, meshes, textures, reference layout
+  ui/           screens, controls, CSS, canvas host and renderer lifecycle hook
+  main.tsx      browser entry point
 ```
+
+Unit tests stay beside the module they exercise, for example `game/game.ts` and
+`game/game_test.ts`. Production entry points never import test modules. The UI
+owns renderer lifetime and browser bindings; physics, rules, and game logic have
+no React, Three.js, or browser dependencies.
 
 ## Multiplayer
 

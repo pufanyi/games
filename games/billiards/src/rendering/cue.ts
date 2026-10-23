@@ -6,7 +6,7 @@ import {
   Vector3,
 } from "three";
 import { BALL_RADIUS as R } from "../physics/constants.ts";
-import type { Session } from "../session.ts";
+import type { Session } from "../runtime/session.ts";
 
 export class Cue {
   readonly group = new Group();
