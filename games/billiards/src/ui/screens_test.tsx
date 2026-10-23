@@ -20,6 +20,7 @@ function view(overrides: Partial<View> = {}): View {
     fouls: 1,
     foul: null,
     power: 0.5,
+    charging: false,
     tip: [0, 0],
     elevation: 0,
     best: null,

@@ -192,6 +192,13 @@ need no external assets; `public/licenses/three.txt` ships the Three.js MIT
 notice. Dispose GPU resources on unmount and rebuild generated render targets
 after graphics-context restoration.
 
+Billiards strength and charge state live in `runtime/session.ts`. Space or the
+Hold button charges from zero over 1.5 seconds; matching release fires. Enter
+fires preset strength, and dragging the bar remains available. Cancellation must
+disarm release on pause, focus loss, pointer interruption, or game end. Keep
+charge ownership explicit so keyboard and pointer inputs cannot fire each
+other's shots. Physics receives cue speed, not charge timing.
+
 ## Coding standard
 
 ### Platform (`platform/`)

@@ -1,8 +1,11 @@
 import {
+  beginCharge,
+  cancelCharge,
   isActive,
   moveCue,
   pickUp,
   place,
+  releaseCharge,
   type Session,
   setPaused,
   setPower,
@@ -30,6 +33,8 @@ export function bindKeyboard(session: Session, refresh: () => void) {
       refresh();
       return;
     }
+    // Focused controls own activation; global Space must not also fire a shot.
+    if (event.target instanceof HTMLButtonElement) return;
     // Let the elevation slider have its own arrow keys.
     if (event.target instanceof HTMLInputElement) return;
     if (!isActive(session)) return;
@@ -74,6 +79,9 @@ export function bindKeyboard(session: Session, refresh: () => void) {
         setPower(session, session.power - 0.05);
         break;
       case " ":
+        if (!event.repeat) beginCharge(session, "keyboard");
+        break;
+      case "Enter":
         if (!event.repeat) shootNow(session);
         break;
       case "w":
@@ -102,6 +110,16 @@ export function bindKeyboard(session: Session, refresh: () => void) {
     event.preventDefault();
     refresh();
   };
+  const onKeyUp = (event: KeyboardEvent) => {
+    if (event.key !== " " || session.charge !== "keyboard") return;
+    event.preventDefault();
+    releaseCharge(session, "keyboard");
+    refresh();
+  };
+  const onBlur = () => {
+    cancelCharge(session);
+    refresh();
+  };
   const onVisibility = () => {
     if (document.hidden) {
       setPaused(session, true);
@@ -109,9 +127,14 @@ export function bindKeyboard(session: Session, refresh: () => void) {
     }
   };
   addEventListener("keydown", onKey);
+  addEventListener("keyup", onKeyUp);
+  addEventListener("blur", onBlur);
   document.addEventListener("visibilitychange", onVisibility);
   return () => {
+    cancelCharge(session);
     removeEventListener("keydown", onKey);
+    removeEventListener("keyup", onKeyUp);
+    removeEventListener("blur", onBlur);
     document.removeEventListener("visibilitychange", onVisibility);
   };
 }

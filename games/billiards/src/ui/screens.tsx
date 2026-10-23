@@ -56,9 +56,11 @@ export function TitleScreen(
         seconds.
       </p>
       <p className="keys">
-        Aim with the mouse or a finger, then drag the power bar down and let go.
-        Or <kbd>←</kbd> <kbd>→</kbd> aim, <kbd>↑</kbd> <kbd>↓</kbd> power,{" "}
-        <kbd>Space</kbd> shoot, <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd>{" "}
+        Aim with the mouse or a finger. Hold Space or Hold to charge; release to
+        shoot. Drag the strength bar for precise shots. Or <kbd>←</kbd>{" "}
+        <kbd>→</kbd> aim, <kbd>↑</kbd> <kbd>↓</kbd> strength, <kbd>Enter</kbd>
+        {" "}
+        shoot at set strength, <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd>{" "}
         <kbd>D</kbd> spin.
       </p>
       {best && <p className="muted">{best}</p>}
@@ -125,6 +127,7 @@ export function ResultScreen({
 
 /** What to do next, shown under the clock. */
 function hint(view: View): string {
+  if (view.charging) return "Release to shoot · Esc to cancel";
   if (view.phase === "placing") {
     return view.area === "kitchen"
       ? "Place the cue ball behind the line"

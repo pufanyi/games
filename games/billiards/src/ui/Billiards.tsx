@@ -16,12 +16,15 @@ import {
 } from "./screens.tsx";
 import {
   aimAt,
+  beginCharge,
+  cancelCharge,
   createSession,
   isActive,
   moveCue,
   pickUp,
   place,
   quitToTitle,
+  releaseCharge,
   type Session,
   setElevation,
   setPaused,
@@ -138,7 +141,7 @@ export function Billiards() {
         ref={canvasRef}
         width={WIDTH}
         height={HEIGHT}
-        aria-label="Pool table. Aim with the mouse or arrow keys, shoot with the power bar or Space."
+        aria-label="Pool table. Aim with the mouse or arrow keys, hold Space to charge and release to shoot, or press Enter for the set strength."
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -164,7 +167,9 @@ export function Billiards() {
                 setPulling(s, pulling);
               })()}
             onShoot={act(shootNow)}
-            onCancel={act((s) => setPulling(s, false))}
+            onCancel={act(cancelCharge)}
+            onCharge={act((s) => beginCharge(s, "pointer"))}
+            onRelease={act((s) => releaseCharge(s, "pointer"))}
             onTurn={(radians) => act((s) => turnAim(s, radians))()}
           />
         </>

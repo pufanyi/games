@@ -25,6 +25,9 @@ import {
 
 /** The steepest the player can raise the cue, in degrees. */
 export const MAX_ELEVATION = 60;
+/** Seconds from zero to full strength; full charge holds until release. */
+export const CHARGE_SECONDS = 1.5;
+export type ChargeSource = "keyboard" | "pointer";
 
 export interface Session {
   /** "title" shows a racked table behind the title screen. */
@@ -36,7 +39,8 @@ export interface Session {
   aim: number;
   /** 0–1; the cue speed rises with its square, for finer soft shots. */
   power: number;
-  /** The power bar is being dragged, so the cue is drawn pulled back. */
+  charge: ChargeSource | null;
+  /** Dragging or charging pulls the rendered cue back. */
   pulling: boolean;
   /** Where the tip hits, as fractions of the ball's radius: [right, up]. */
   tip: [number, number];
@@ -62,6 +66,7 @@ export interface View {
   fouls: number;
   foul: Foul | null;
   power: number;
+  charging: boolean;
   tip: [number, number];
   elevation: number;
   best: Best | null;
@@ -83,6 +88,7 @@ export function createSession(): Session {
     aim: 0,
     power: 0.5,
     pulling: false,
+    charge: null,
     tip: [0, 0],
     elevation: 0,
     best: loadBest(),
@@ -107,7 +113,8 @@ export function viewOf(s: Session): View {
     shots: game.shots,
     fouls: game.fouls,
     foul: game.foul,
-    power: s.power,
+    power: Math.round(s.power * 100) / 100,
+    charging: s.charge !== null,
     tip: s.tip,
     elevation: s.elevation,
     best: s.best,
@@ -136,6 +143,7 @@ export function start(s: Session) {
 }
 
 export function quitToTitle(s: Session) {
+  cancelCharge(s);
   s.game = createGame(newSeed());
   s.mode = "title";
   s.paused = false;
@@ -144,6 +152,7 @@ export function quitToTitle(s: Session) {
 /** Pausing applies while a game is on. */
 export function setPaused(s: Session, paused: boolean) {
   const over = s.game.phase === "won" || s.game.phase === "lost";
+  if (paused) cancelCharge(s);
   if (s.mode === "game" && !over) s.paused = paused;
 }
 
@@ -156,35 +165,60 @@ export function toggleMuted(s: Session) {
 
 /** Aims the cue ball at a point on the table. */
 export function aimAt(s: Session, x: number, y: number) {
+  if (s.charge) return;
   const cue = s.game.balls[0];
   if (x === cue.x && y === cue.y) return;
   s.aim = Math.atan2(y - cue.y, x - cue.x);
 }
 
 export function turnAim(s: Session, radians: number) {
-  s.aim += radians;
+  if (!s.charge) s.aim += radians;
 }
 
 export function setPower(s: Session, power: number) {
-  s.power = Math.min(Math.max(power, 0), 1);
+  if (!s.charge) s.power = Math.min(Math.max(power, 0), 1);
 }
 
 export function setPulling(s: Session, pulling: boolean) {
-  s.pulling = pulling;
+  if (!s.charge) s.pulling = pulling;
+}
+
+/** A single input owns the charge; another input cannot release its shot. */
+export function beginCharge(s: Session, source: ChargeSource) {
+  if (!isActive(s) || s.game.phase !== "aiming" || s.charge || s.pulling) {
+    return;
+  }
+  s.charge = source;
+  s.power = 0;
+  s.pulling = true;
+}
+
+export function releaseCharge(s: Session, source: ChargeSource) {
+  if (s.charge !== source) return;
+  s.charge = null;
+  shootNow(s);
+}
+
+export function cancelCharge(s: Session) {
+  s.charge = null;
+  s.pulling = false;
 }
 
 /** Sets the tip offset, kept inside the miscue limit. */
 export function setTip(s: Session, right: number, up: number) {
+  if (s.charge) return;
   const r = Math.sqrt(right * right + up * up);
   const k = r > MISCUE_LIMIT ? MISCUE_LIMIT / r : 1;
   s.tip = [right * k, up * k];
 }
 
 export function setElevation(s: Session, degrees: number) {
+  if (s.charge) return;
   s.elevation = Math.min(Math.max(degrees, 0), MAX_ELEVATION);
 }
 
 function resetCue(s: Session) {
+  cancelCharge(s);
   s.tip = [0, 0];
   s.elevation = 0;
   s.pulling = false;
@@ -199,11 +233,12 @@ export function place(s: Session) {
 }
 
 export function pickUp(s: Session) {
-  if (isActive(s)) pickUpCueBall(s.game);
+  if (isActive(s) && !s.charge) pickUpCueBall(s.game);
 }
 
 /** Shoots with the current aim, power, spin and elevation. */
 export function shootNow(s: Session) {
+  if (s.charge) return;
   s.pulling = false;
   if (!isActive(s) || s.game.phase !== "aiming" || s.power < 0.02) return;
   const e = (s.elevation * Math.PI) / 180;
@@ -223,8 +258,12 @@ export function shootNow(s: Session) {
 /** Advances by `dt` seconds of real time, with the sound around it. */
 export function update(s: Session, dt: number) {
   if (!isActive(s)) return;
+  if (s.charge) {
+    s.power = Math.min(1, s.power + Math.max(0, dt) / CHARGE_SECONDS);
+  }
   const before = s.game.phase;
   tick(s.game, dt);
+  if (s.game.phase !== "aiming") cancelCharge(s);
   // Including the strike, which `shoot` queued between frames.
   for (const event of s.game.events) play(event);
   s.game.events = [];
