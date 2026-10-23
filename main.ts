@@ -2,7 +2,8 @@ import { serveDir } from "@std/http/file-server";
 import { findGame, games } from "./games.ts";
 import { renderComingSoon, renderHome, renderNotFound } from "./views.ts";
 
-const ROOT = import.meta.dirname!;
+const ROOT = import.meta.dirname;
+if (!ROOT) throw new Error("main.ts must be run from a local file");
 const GAMES_DIR = `${ROOT}/games`;
 const STATIC_DIR = `${ROOT}/static`;
 

@@ -21,6 +21,13 @@ from scratch in plain HTML/CSS/JS. There is no Flash emulation (no Ruffle, no
 - The Deno agent skill lives in `.agents/skills/deno` (symlinked into
   `.claude/skills/deno`, pinned in `skills-lock.json`). For version-accurate CLI
   details, prefer `deno <cmd> --help`.
+- Linting is [Biome](https://biomejs.dev) (`biome.json`, recommended preset),
+  run through Deno from npm. `deno lint` is not used. Biome's formatter and
+  assist (import sorting) are disabled so they don't fight `deno fmt`, which
+  owns formatting. Biome is pinned in `deno.json` and the `$schema` URL in
+  `biome.json`; bump both together.
+- CI is GitHub Actions (`.github/workflows/ci.yml`): fmt check, Biome lint, type
+  check, and tests on every PR and push to `main`, on Deno `2.9.x`.
 
 ## Layout
 
@@ -31,6 +38,8 @@ games.ts         game registry (slug, title, description, tags)
 static/          landing page CSS and JS (grid/list toggle, search)
 games/<slug>/    one self-contained static folder per game
 main_test.ts     handler tests
+biome.json       Biome linter config
+.github/         CI workflow
 ```
 
 ## Commands
@@ -39,10 +48,12 @@ main_test.ts     handler tests
 deno task dev     # server on http://localhost:8000 with --watch
 deno task start   # server without watch
 deno task test    # tests (needs --allow-read=., set in the task)
-deno fmt && deno lint && deno check main.ts main_test.ts
+deno task lint    # Biome lint; warnings fail too
+deno fmt --check && deno task lint && deno check && deno task test   # = CI
 ```
 
-Run fmt, lint, check, and test before calling a task done.
+Run the CI line before calling a task done. If you add a step to CI, add it to
+that line too (and vice versa).
 
 ## Adding a game
 
@@ -61,7 +72,10 @@ Run fmt, lint, check, and test before calling a task done.
 ## Conventions
 
 - Permissions stay scoped: `--allow-net --allow-read=.`. Don't switch tasks to
-  `-A`; add the specific `--allow-*` flag a new feature needs.
+  `-A`; add the specific `--allow-*` flag a new feature needs. (Exception: the
+  `lint` task needs `--allow-run` to launch Biome's native binary.)
+- Fix Biome findings rather than suppressing them; if a rule truly doesn't fit,
+  turn it off in `biome.json` with a short reason in the PR.
 - Escape every interpolated value in `views.ts` with `escapeHtml`.
 - Styling uses CSS custom properties on `:root` with a
   `prefers-color-scheme: dark` override; new UI should use those tokens and work
@@ -76,5 +90,6 @@ Each finished task lands as its own pull request:
 
 1. Branch from an up-to-date `main` (never commit to `main` directly).
 2. Make the change, including any `AGENTS.md` updates it calls for.
-3. Run fmt, lint, check, and test.
+3. Run the CI line from [Commands](#commands).
 4. Commit, push, and open a PR against `main` with `gh pr create`.
+5. Watch the CI run (`gh pr checks --watch`) and fix it if it fails.

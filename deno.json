@@ -2,9 +2,11 @@
   "tasks": {
     "dev": "deno run --watch --allow-net --allow-read=. main.ts",
     "start": "deno run --allow-net --allow-read=. main.ts",
-    "test": "deno test --allow-read=."
+    "test": "deno test --allow-read=.",
+    "lint": "deno run --allow-read --allow-env --allow-run npm:@biomejs/biome lint --error-on-warnings"
   },
   "imports": {
+    "@biomejs/biome": "npm:@biomejs/biome@2.5.15",
     "@std/assert": "jsr:@std/assert@1",
     "@std/http": "jsr:@std/http@^1.1.4"
   }
