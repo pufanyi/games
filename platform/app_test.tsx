@@ -22,11 +22,14 @@ function get(path: string, files: Files) {
   return createHandler(files, ASSETS)(new Request(`http://localhost${path}`));
 }
 
-Deno.test("catalog lists every game and links to its play page", async () => {
+Deno.test("catalog links published games directly and unbuilt games to their notice", async () => {
   const { files } = fakeFiles([game.slug]);
   const body = await (await get("/", files)).text();
   for (const listed of games) {
-    assertStringIncludes(body, `href="/play/${listed.slug}"`);
+    const href = listed.slug === game.slug
+      ? `/games/${listed.slug}/`
+      : `/play/${listed.slug}`;
+    assertStringIncludes(body, `href="${href}"`);
     assertStringIncludes(body, listed.title);
   }
   assertStringIncludes(body, `1 of ${games.length} playable`);
@@ -42,13 +45,18 @@ Deno.test("page data can't break out of its script tag", async () => {
   assertEquals(JSON.parse(data).name, "catalog");
 });
 
-Deno.test("play page embeds a built game", async () => {
+Deno.test("legacy play links redirect to the standalone game", async () => {
   const { files } = fakeFiles([game.slug]);
-  const res = await get(`/play/${game.slug}`, files);
-  assertEquals(res.status, 200);
-  const body = await res.text();
-  assertStringIncludes(body, `<iframe src="/games/${game.slug}/"`);
-  assertStringIncludes(body, "Fullscreen");
+  for (const suffix of ["", "/", "?level=2"]) {
+    const res = await get(`/play/${game.slug}${suffix}`, files);
+    assertEquals(res.status, 302);
+    assertEquals(
+      res.headers.get("location"),
+      `http://localhost/games/${game.slug}/${
+        suffix.startsWith("?") ? suffix : ""
+      }`,
+    );
+  }
 });
 
 Deno.test("play page shows coming soon for an unbuilt game", async () => {

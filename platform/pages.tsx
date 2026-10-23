@@ -1,12 +1,6 @@
 // Platform pages. Rendered to HTML on the server (app.tsx) and hydrated in the
 // browser (client.tsx) from the same props.
-import {
-  type CSSProperties,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import type { Game } from "./games.ts";
 
 export interface GameListing extends Game {
@@ -167,7 +161,12 @@ function Catalog({ games }: { games: GameListing[] }) {
 function GameCard({ game }: { game: GameListing }) {
   return (
     <li className="game">
-      <a className="game-link" href={`/play/${encodeURIComponent(game.slug)}`}>
+      <a
+        className="game-link"
+        href={game.playable
+          ? `/games/${encodeURIComponent(game.slug)}/`
+          : `/play/${encodeURIComponent(game.slug)}`}
+      >
         <Cover game={game} />
         <div className="game-body">
           <div className="game-heading">
@@ -187,66 +186,17 @@ function GameCard({ game }: { game: GameListing }) {
 }
 
 function Play({ game }: { game: GameListing }) {
-  const playerRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef<HTMLIFrameElement>(null);
-  const [fullscreen, setFullscreen] = useState(false);
-  const src = `/games/${encodeURIComponent(game.slug)}/`;
-  const [width, height] = game.aspectRatio;
-  const style = { "--ratio": `${width} / ${height}` } as CSSProperties;
-
-  useEffect(() => {
-    // Send keyboard input to the game without an extra click.
-    frameRef.current?.focus();
-    const onChange = () => {
-      setFullscreen(document.fullscreenElement === playerRef.current);
-    };
-    document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
-  }, []);
-
-  function toggleFullscreen() {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else playerRef.current?.requestFullscreen();
-    frameRef.current?.focus();
-  }
-
   return (
     <main className="wrap play">
       <header className="play-header">
         <a className="back" href="/">← All games</a>
         <h1 className="play-title">{game.title}</h1>
-        {game.playable && (
-          <div className="play-actions">
-            <button type="button" className="button" onClick={toggleFullscreen}>
-              {fullscreen ? "Exit fullscreen" : "Fullscreen"}
-            </button>
-            <a className="button" href={src} target="_blank" rel="noopener">
-              Open on its own
-            </a>
-          </div>
-        )}
       </header>
-      {game.playable
-        ? (
-          <div className="player" ref={playerRef} style={style}>
-            <iframe
-              ref={frameRef}
-              src={src}
-              title={game.title}
-              allow="fullscreen; autoplay; gamepad"
-            />
-          </div>
-        )
-        : (
-          <div className="notice">
-            <Cover game={game} large />
-            <h2>Coming soon</h2>
-            <p>
-              This game hasn't been built yet. Add it under{" "}
-              <code>games/{game.slug}/</code> to make it playable.
-            </p>
-          </div>
-        )}
+      <div className="notice">
+        <Cover game={game} large />
+        <h2>Coming soon</h2>
+        <p>This game is not available yet. Check back soon.</p>
+      </div>
       <p className="play-description">{game.description}</p>
     </main>
   );
