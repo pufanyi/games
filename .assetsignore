@@ -1,0 +1,4 @@
+# Upload only what the Worker serves as files (see wrangler.jsonc).
+/*
+!/static/
+!/games/

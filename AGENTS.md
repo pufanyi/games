@@ -15,9 +15,20 @@ from scratch in plain HTML/CSS/JS. There is no Flash emulation (no Ruffle, no
 ## Stack
 
 - [Deno](https://deno.com) 2.9+ is the runtime, package manager, and toolchain.
-  No Node, npm, or build step.
-- Server: `Deno.serve` + `serveDir` from `@std/http`. Pages are rendered as HTML
-  strings in `views.ts`; there is no framework.
+  No npm dependencies or build step; Node is only used to run Wrangler for the
+  Cloudflare deploy.
+- Server: routing lives in `app.ts` (`createHandler`) and is runtime-neutral;
+  each entry point supplies only file access. Pages are rendered as HTML strings
+  in `views.ts`; there is no framework.
+  - `main.ts`: local Deno server (`Deno.serve` + `serveDir` from `@std/http`).
+  - `worker.ts`: Cloudflare Worker, the production deploy. Keep `app.ts`,
+    `views.ts`, and `games.ts` free of `Deno.*` APIs so it still bundles.
+- Deploy: Cloudflare Workers Builds runs `npx wrangler deploy` on push, using
+  `wrangler.jsonc`. `static/` and `games/` are uploaded as Workers Static Assets
+  (`.assetsignore` filters out everything else in the repo root);
+  `run_worker_first` sends every request through `worker.ts`, which reads files
+  via the `ASSETS` binding. The Worker `name` must match the Worker in the
+  Cloudflare dashboard.
 - The Deno agent skill lives in `.agents/skills/deno` (symlinked into
   `.claude/skills/deno`, pinned in `skills-lock.json`). For version-accurate CLI
   details, prefer `deno <cmd> --help`.
@@ -36,12 +47,16 @@ from scratch in plain HTML/CSS/JS. There is no Flash emulation (no Ruffle, no
 ## Layout
 
 ```
-main.ts          request routing: /, /static/*, /games/<slug>/...
+app.ts           request routing: /, /static/*, /games/<slug>/...
+main.ts          Deno server entry point
+worker.ts        Cloudflare Worker entry point
+wrangler.jsonc   Cloudflare deploy config (+ .assetsignore)
 views.ts         HTML rendering (landing, coming-soon, 404) + escapeHtml
 games.ts         game registry (slug, title, description, tags)
 static/          landing page CSS and JS (grid/list toggle, search)
 games/<slug>/    one self-contained static folder per game
-main_test.ts     handler tests
+main_test.ts     handler tests (Deno entry point)
+worker_test.ts   Worker tests with a fake ASSETS binding
 biome.json       Biome linter config
 .github/         CI workflow
 ```
@@ -53,6 +68,8 @@ deno task dev     # server on http://localhost:8000 with --watch
 deno task start   # server without watch
 deno task test    # tests (needs --allow-read=., set in the task)
 deno task lint    # Biome lint; warnings fail too
+npx wrangler dev  # run the Cloudflare Worker locally (needs Node)
+npx wrangler deploy --dry-run   # check the Worker bundles and assets upload
 deno fmt --check && deno task lint && deno check && deno task test   # = CI
 ```
 
