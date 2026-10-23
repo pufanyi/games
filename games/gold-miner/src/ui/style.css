@@ -138,6 +138,26 @@ canvas {
   filter: drop-shadow(0 0.5cqw 0 rgb(58 35 18 / 0.45));
 }
 
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.logo-art {
+  width: 3.4em;
+  height: 3.4em;
+  filter: drop-shadow(0 0.5cqw 0 rgb(58 35 18 / 0.45));
+}
+
+.logo-art:first-child {
+  transform: rotate(-12deg);
+}
+
+.logo-art:last-child {
+  transform: rotate(10deg);
+}
+
 .tagline {
   max-width: 38em;
 }
@@ -198,63 +218,303 @@ kbd {
 }
 
 .button:focus-visible,
-.offer:focus-visible,
 .control:focus-visible {
   outline: 3px solid #fffaf0;
   outline-offset: 3px;
 }
 
-.offers {
-  width: 100%;
-  display: grid;
-  gap: 0.7em;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14em), 1fr));
+/* The shop: a general store with the storekeeper behind his counter. Sizes
+   use container units so the whole scene scales with the stage. */
+
+.panel.shop {
+  width: min(100%, 90cqw);
+  gap: 1.1cqw;
+  padding: 2cqw 2.4cqw 2.4cqw;
+  font-size: clamp(9px, 1.9cqw, 16px);
 }
 
-.offer {
-  font: inherit;
+.shop-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+}
+
+.purse {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.1em 0.8em 0.1em 0.3em;
+  font-family: var(--display);
+  font-size: 1.5em;
+  color: #fff4d6;
+  background: linear-gradient(var(--wood-light), var(--wood));
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 0 0.12em 0 var(--ink);
+  text-shadow: 0 1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink),
+    0 -1px 0 var(--ink);
+}
+
+.coin-icon {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.store {
+  width: 100%;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: 1.2cqw;
+}
+
+/* Back wall: vertical planks. */
+.store-back {
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.15em 0.6em;
-  padding: 0.6em 0.8em;
+  grid-template-columns: 18cqw 1fr;
+  align-items: end;
+  gap: 1.5cqw;
+  padding: 1.6cqw 2cqw 0;
+  /* Room for the goods, which stand on the counter in front of the wall. */
+  padding-bottom: 0;
+  min-height: 21cqw;
+  background:
+    linear-gradient(rgb(0 0 0 / 0), rgb(40 20 5 / 0.35)),
+    repeating-linear-gradient(
+    90deg,
+    #b07a45 0 6.5cqw,
+    #9c6a3a 6.5cqw calc(6.5cqw + 2px),
+    #a5713f calc(6.5cqw + 2px) 13cqw,
+    #8f5f33 13cqw calc(13cqw + 2px)
+  );
+}
+
+.store-sign {
+  position: absolute;
+  top: 1cqw;
+  right: 2cqw;
+  padding: 0.1em 0.8em;
+  font-family: var(--display);
+  font-size: 1.15em;
+  letter-spacing: 0.06em;
+  color: #fff4d6;
+  background: #4e2f1a;
+  border: 2px solid var(--ink);
+  border-radius: 0.4em;
+  box-shadow: inset 0 0 0 2px #8d5a2b;
+  transform: rotate(-2deg);
+}
+
+.shopkeeper {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.shopkeeper-body {
+  animation: breathe 3.2s ease-in-out infinite;
+  transform-origin: 50% 100%;
+  transform-box: fill-box;
+}
+
+.shopkeeper-eyes {
+  animation: blink 4.5s infinite;
+  transform-origin: 50% 55px;
+  transform-box: view-box;
+}
+
+/* Speech bubble with its tail pointing at the storekeeper. */
+.panel .speech {
+  position: relative;
+  align-self: center;
+  min-height: 4.2em;
+  margin: 5cqw 0 9cqw;
+  padding: 0.6em 0.9em;
   text-align: left;
   color: var(--text);
   background: #fffdf6;
   border: 2px solid var(--ink);
-  border-radius: 0.7em;
-  box-shadow: 0 0.2em 0 var(--ink);
+  border-radius: 1em;
+  box-shadow: 0 0.15em 0 rgb(0 0 0 / 0.25);
+}
+
+.speech::before,
+.speech::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  border-style: solid;
+  border-color: transparent;
+}
+
+.speech::before {
+  left: -0.75em;
+  margin-top: -0.55em;
+  border-width: 0.55em 0.75em 0.55em 0;
+  border-right-color: var(--ink);
+}
+
+.speech::after {
+  left: calc(-0.75em + 3px);
+  margin-top: calc(-0.55em + 2px);
+  border-width: calc(0.55em - 2px) calc(0.75em - 2px) calc(0.55em - 2px) 0;
+  border-right-color: #fffdf6;
+}
+
+.speech strong {
+  font-family: var(--display);
+  font-weight: 400;
+}
+
+/* The counter: a lit top edge the goods stand on, and a planked front. */
+/* The goods line up to the storekeeper's right, so he stays in view. */
+.counter {
+  display: flex;
+  justify-content: center;
+  gap: 1cqw;
+  padding: 0 1.5cqw 1.4cqw 21.5cqw;
+  border-top: 2px solid var(--ink);
+  background:
+    linear-gradient(#e2a866 0 1.6cqw, var(--ink) 1.6cqw calc(1.6cqw + 2px),
+    transparent 0),
+    repeating-linear-gradient(
+    90deg,
+    #8a5428 0 9cqw,
+    #6e4320 9cqw calc(9cqw + 2px)
+  );
+}
+
+.offer {
+  font: inherit;
+  position: relative;
+  flex: 0 1 13cqw;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5cqw;
+  /* Lifts the art so it stands on the counter top. */
+  margin-top: -7.6cqw;
+  padding: 0;
+  color: var(--text);
+  background: none;
+  border: 0;
   cursor: pointer;
-  transition: transform 80ms, box-shadow 80ms;
 }
 
-.offer:hover:not(:disabled) {
-  background: #fff4cf;
+.offer-art {
+  position: relative;
+  width: 9cqw;
+  height: 9cqw;
+  filter: drop-shadow(0 0.5cqw 0 rgb(40 20 5 / 0.35));
+  transition: transform 120ms ease-out;
 }
 
-.offer:active:not(:disabled) {
-  transform: translateY(0.15em);
-  box-shadow: 0 0.05em 0 var(--ink);
+.shop-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.offer:disabled {
-  opacity: 0.5;
+.offer[data-short] .offer-art {
+  filter: grayscale(0.6) opacity(0.65);
+}
+
+.offer:hover:not([aria-disabled="true"]) .offer-art,
+.offer:focus-visible:not([aria-disabled="true"]) .offer-art {
+  transform: translateY(-0.8cqw) rotate(-4deg);
+}
+
+.offer:active:not([aria-disabled="true"]) .offer-art {
+  transform: translateY(0.2cqw);
+}
+
+.offer[aria-disabled="true"] {
   cursor: default;
 }
 
-.offer-name,
+/* The ring goes around the price tag instead. */
+.offer:focus-visible {
+  outline: none;
+}
+
+.offer:has(.stamp) .shop-icon {
+  opacity: 0.35;
+}
+
+.stamp {
+  position: absolute;
+  inset: 30% -10% auto;
+  font-family: var(--display);
+  font-size: 1.15em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #c62828;
+  border: 0.15em solid currentColor;
+  border-radius: 0.3em;
+  background: rgb(255 250 240 / 0.8);
+  transform: rotate(-14deg);
+}
+
+/* Paper price tag hanging on the counter front. */
+.tag {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.35em 0.4em 0.4em;
+  line-height: 1.15;
+  background: linear-gradient(#fffdf4, #f1e2bd);
+  border: 2px solid var(--ink);
+  border-radius: 0.4em;
+  box-shadow: 0 0.15em 0 rgb(0 0 0 / 0.3);
+}
+
+.offer:focus-visible .tag {
+  outline: 3px solid #fffaf0;
+  outline-offset: 3px;
+}
+
+.offer:nth-child(odd) .tag {
+  transform: rotate(-2deg);
+}
+
+.offer:nth-child(even) .tag {
+  transform: rotate(2deg);
+}
+
+.offer-name {
+  font-size: 0.82em;
+  color: var(--muted);
+}
+
 .offer-price {
   font-family: var(--display);
-  font-size: 1.1em;
+  font-size: 1.3em;
+  color: #2e7d32;
 }
 
-.offer-price {
-  color: #b06f00;
+.offer[data-short] .offer-price {
+  color: #c62828;
 }
 
-.offer-description {
-  grid-column: 1 / -1;
-  font-size: 0.85em;
+.shop-note {
   color: var(--muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* On-screen controls: little wooden buttons over the bottom-right corner. */
@@ -317,9 +577,29 @@ kbd {
   }
 }
 
+@keyframes breathe {
+  50% {
+    transform: scale(1.01, 0.985);
+  }
+}
+
+@keyframes blink {
+  0%,
+  94%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  97% {
+    transform: scaleY(0.1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .overlay,
-  .panel {
+  .panel,
+  .shopkeeper-body,
+  .shopkeeper-eyes {
     animation: none;
   }
 }

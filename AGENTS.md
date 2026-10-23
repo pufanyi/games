@@ -151,11 +151,12 @@ that line too (and vice versa).
 
 - `game/`: deterministic simulation, level generation, item definitions, shared
   tuning constants, shop rules, and seeded RNG. No browser or React imports.
-- `rendering/`: Canvas drawing, scenery, sprites, and painting helpers; reads
-  game state without mutating it.
+- `rendering/`: Canvas drawing, scenery, the miner's camp, sprites, and painting
+  helpers; reads game state without mutating it.
 - `runtime/`: browser session, audio, and local storage.
-- `ui/`: React menus, controls, the Canvas host, and CSS. React receives view
-  updates only when the view changes; Canvas owns frame rendering.
+- `ui/`: React menus, controls, SVG art for the screens, the Canvas host, and
+  CSS. React receives view updates only when the view changes; Canvas owns frame
+  rendering.
 - `fonts/`: bundled font and license; `main.tsx` is the browser entry point.
 
 Tests live beside their modules. See `games/gold-miner/CALIBRATION.md` for

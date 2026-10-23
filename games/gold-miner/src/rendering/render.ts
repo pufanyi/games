@@ -1,16 +1,16 @@
 // Draws a GameState onto a 2D canvas. Reads the state, never changes it.
-import { GROUND_Y, WIDTH } from "../game/config.ts";
+import { WIDTH } from "../game/config.ts";
 import {
   circlePath,
   type Ctx,
   FONT,
   hash,
-  INK,
   ink,
   outlinedText,
   sparkle,
   woodBoard,
 } from "./paint.ts";
+import { DECK_Y, drawCamp, drawRig } from "./camp.ts";
 import { drawScenery } from "./scenery.ts";
 import {
   clawTip,
@@ -21,28 +21,18 @@ import {
 import { PIVOT_Y, TICK_RATE } from "../game/config.ts";
 import { drawItem, drawPocket } from "./sprites.ts";
 
-/** Radius of the pulley wheel; the rope leaves its bottom at PIVOT_Y. */
-const PULLEY_R = 11;
-/** The crank the miner turns, at hip height between pulley and miner. */
-const CRANK = { dx: 26, y: GROUND_Y - 30, r: 8 };
-
 export function draw(ctx: Ctx, state: GameState) {
   drawScenery(ctx, state.tick);
   for (const item of state.items) drawPocket(ctx, item);
   for (const item of state.items) drawItem(ctx, item, state.tick);
-  for (const player of state.players) drawPlayer(ctx, player, state.tick);
+  for (const player of state.players) drawPlayer(ctx, state, player);
   for (const effect of state.effects) drawEffect(ctx, effect);
   drawHud(ctx, state);
 }
 
-function drawPlayer(ctx: Ctx, player: Player, tick: number) {
+function drawPlayer(ctx: Ctx, state: GameState, player: Player) {
   const { claw, x } = player;
-  const reeling = claw.state === "retract";
-  // Turns while the rope moves; the pulley and crank follow it.
-  const turn = claw.state === "swing" ? 0 : claw.length * 0.08;
-  const pulleyY = PIVOT_Y - PULLEY_R;
-
-  drawScaffold(ctx, x);
+  drawRig(ctx, player);
 
   // Rope: a dark core with a twisted highlight that moves as it winds.
   const tip = clawTip(player);
@@ -60,255 +50,15 @@ function drawPlayer(ctx: Ctx, player: Player, tick: number) {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  const crankX = x + CRANK.dx;
-  drawBelt(ctx, x, pulleyY, crankX, CRANK.y);
-  drawPulley(ctx, x, pulleyY, turn);
-  drawCrank(ctx, crankX, CRANK.y, turn);
-  const hand = {
-    x: crankX + Math.cos(turn) * CRANK.r,
-    y: CRANK.y + Math.sin(turn) * CRANK.r,
-  };
-  drawMiner(ctx, x + 48, GROUND_Y - 12, hand, reeling, tick);
-
-  if (claw.item) drawItem(ctx, claw.item, tick);
+  drawCamp(ctx, state, player);
+  if (claw.item) drawItem(ctx, claw.item, state.tick);
   drawClaw(ctx, tip.x, tip.y, claw.angle, claw.item !== null);
 }
 
-function drawScaffold(ctx: Ctx, x: number) {
-  const top = PIVOT_Y - PULLEY_R;
-  // A-frame legs.
-  for (const side of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(x + side * 34, GROUND_Y - 10);
-    ctx.lineTo(x + side * 4, top - 4);
-    ctx.lineTo(x + side * 10, top - 4);
-    ctx.lineTo(x + side * 42, GROUND_Y - 10);
-    ctx.closePath();
-    ctx.fillStyle = "#8d5a2b";
-    ctx.fill();
-    ink(ctx, 2);
-  }
-  // Cross brace.
-  ctx.beginPath();
-  ctx.roundRect(x - 24, GROUND_Y - 34, 48, 6, 2);
-  ctx.fillStyle = "#a06a36";
-  ctx.fill();
-  ink(ctx, 2);
-
-  // Plank platform.
-  const plank = ctx.createLinearGradient(0, GROUND_Y - 14, 0, GROUND_Y);
-  plank.addColorStop(0, "#c48a4f");
-  plank.addColorStop(1, "#8d5a2b");
-  ctx.fillStyle = plank;
-  ctx.beginPath();
-  ctx.roundRect(x - 64, GROUND_Y - 14, 128, 12, 3);
-  ctx.fill();
-  ink(ctx, 2);
-  ctx.strokeStyle = "rgb(58 35 18 / 0.5)";
-  ctx.lineWidth = 1.5;
-  for (const px of [-32, 0, 32]) {
-    ctx.beginPath();
-    ctx.moveTo(x + px, GROUND_Y - 13);
-    ctx.lineTo(x + px, GROUND_Y - 3);
-    ctx.stroke();
-  }
-}
-
-function drawPulley(ctx: Ctx, x: number, y: number, turn: number) {
-  circlePath(ctx, x, y, PULLEY_R + 3);
-  ctx.fillStyle = "#6d6a66";
-  ctx.fill();
-  ink(ctx, 2);
-  circlePath(ctx, x, y, PULLEY_R - 2);
-  ctx.fillStyle = "#9e9a94";
-  ctx.fill();
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 2;
-  for (let spoke = 0; spoke < 3; spoke++) {
-    const a = turn + (spoke * Math.PI) / 3;
-    ctx.beginPath();
-    ctx.moveTo(
-      x - Math.cos(a) * (PULLEY_R - 2),
-      y - Math.sin(a) * (PULLEY_R - 2),
-    );
-    ctx.lineTo(
-      x + Math.cos(a) * (PULLEY_R - 2),
-      y + Math.sin(a) * (PULLEY_R - 2),
-    );
-    ctx.stroke();
-  }
-  circlePath(ctx, x, y, 3.5);
-  ctx.fillStyle = "#e0c060";
-  ctx.fill();
-  ink(ctx, 1.5);
-}
-
-/** The drive belt from the crank up to the pulley. */
-function drawBelt(ctx: Ctx, px: number, py: number, cx: number, cy: number) {
-  ctx.strokeStyle = "#2b1a0c";
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(px + 2, py - PULLEY_R);
-  ctx.lineTo(cx + 2, cy - CRANK.r);
-  ctx.moveTo(px - 2, py + PULLEY_R);
-  ctx.lineTo(cx - 2, cy + CRANK.r);
-  ctx.stroke();
-}
-
-/** A small wheel on a post, with a handle the miner holds. */
-function drawCrank(ctx: Ctx, x: number, y: number, turn: number) {
-  ctx.beginPath();
-  ctx.roundRect(x - 3, y, 6, GROUND_Y - 14 - y, 2);
-  ctx.fillStyle = "#8d5a2b";
-  ctx.fill();
-  ink(ctx, 1.5);
-  circlePath(ctx, x, y, CRANK.r);
-  ctx.fillStyle = "#8a8680";
-  ctx.fill();
-  ink(ctx, 2);
-  const hx = x + Math.cos(turn) * CRANK.r;
-  const hy = y + Math.sin(turn) * CRANK.r;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(hx, hy);
-  ctx.strokeStyle = "#4b4844";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  circlePath(ctx, hx, hy, 2.5);
-  ctx.fillStyle = "#c62828";
-  ctx.fill();
-  ink(ctx, 1.2);
-}
-
-/** A bearded prospector at (x, feetY), cranking the winch at `hand`. */
-function drawMiner(
-  ctx: Ctx,
-  x: number,
-  feetY: number,
-  hand: { x: number; y: number },
-  reeling: boolean,
-  tick: number,
-) {
-  const bob = reeling ? Math.abs(Math.sin(tick * 0.25)) * -2 : 0;
-  const hip = feetY - 22;
-  const shoulder = { x: x - 6, y: feetY - 44 + bob };
-
-  // Boots and legs (overalls).
-  for (const side of [-1, 1]) {
-    ctx.beginPath();
-    ctx.roundRect(x + side * 6 - 5, hip, 10, 18, 3);
-    ctx.fillStyle = "#3d5a99";
-    ctx.fill();
-    ink(ctx, 2);
-    ctx.beginPath();
-    ctx.roundRect(x + side * 6 - 6 + side * 2, feetY - 6, 13, 7, 3);
-    ctx.fillStyle = "#4e2f1a";
-    ctx.fill();
-    ink(ctx, 2);
-  }
-
-  // Back arm hanging.
-  limb(ctx, x + 8, feetY - 42 + bob, x + 13, feetY - 26 + bob, "#c0392b");
-
-  // Torso: red shirt under an overall bib.
-  ctx.beginPath();
-  ctx.roundRect(x - 13, feetY - 48 + bob, 26, 28, 8);
-  ctx.fillStyle = "#c0392b";
-  ctx.fill();
-  ink(ctx, 2);
-  ctx.beginPath();
-  ctx.roundRect(x - 9, feetY - 38 + bob, 18, 18, 3);
-  ctx.fillStyle = "#4a6db3";
-  ctx.fill();
-  ink(ctx, 1.5);
-  for (const bx of [-5, 5]) {
-    circlePath(ctx, x + bx, feetY - 35 + bob, 1.6);
-    ctx.fillStyle = "#f4c430";
-    ctx.fill();
-  }
-
-  // Front arm on the crank.
-  limb(ctx, shoulder.x, shoulder.y, hand.x, hand.y, "#c0392b");
-  circlePath(ctx, hand.x, hand.y, 4);
-  ctx.fillStyle = "#f2c094";
-  ctx.fill();
-  ink(ctx, 1.5);
-
-  // Head.
-  const hy = feetY - 60 + bob;
-  circlePath(ctx, x, hy, 12);
-  ctx.fillStyle = "#f5c99b";
-  ctx.fill();
-  ink(ctx, 2);
-  // Beard and mustache.
-  ctx.beginPath();
-  ctx.moveTo(x - 11, hy + 1);
-  ctx.quadraticCurveTo(x - 12, hy + 15, x, hy + 17);
-  ctx.quadraticCurveTo(x + 12, hy + 15, x + 11, hy + 1);
-  ctx.quadraticCurveTo(x, hy + 7, x - 11, hy + 1);
-  ctx.fillStyle = "#e9e2d4";
-  ctx.fill();
-  ink(ctx, 1.5);
-  ctx.beginPath();
-  ctx.ellipse(x - 4, hy + 3, 5, 2.5, 0.3, 0, Math.PI * 2);
-  ctx.ellipse(x + 4, hy + 3, 5, 2.5, -0.3, 0, Math.PI * 2);
-  ctx.fillStyle = "#d8d0c0";
-  ctx.fill();
-  // Nose, eyes, cheeks.
-  circlePath(ctx, x + 1, hy, 3.2);
-  ctx.fillStyle = "#e8a37a";
-  ctx.fill();
-  ink(ctx, 1.2);
-  ctx.fillStyle = INK;
-  for (const ex of [-5, 5]) {
-    circlePath(ctx, x + ex, hy - 2.5, 1.7);
-    ctx.fill();
-  }
-  ctx.fillStyle = "rgb(240 120 100 / 0.45)";
-  for (const cx of [-8, 8]) {
-    circlePath(ctx, x + cx, hy + 0.5, 2.5);
-    ctx.fill();
-  }
-
-  // Hard hat with a lamp.
-  ctx.beginPath();
-  ctx.arc(x, hy - 8, 13, Math.PI, 0);
-  ctx.closePath();
-  ctx.fillStyle = "#f4c430";
-  ctx.fill();
-  ink(ctx, 2);
-  ctx.beginPath();
-  ctx.roundRect(x - 17, hy - 10, 34, 4, 2);
-  ctx.fillStyle = "#e0ad1c";
-  ctx.fill();
-  ink(ctx, 1.5);
-  circlePath(ctx, x, hy - 15, 4);
-  ctx.fillStyle = "#fff8d0";
-  ctx.fill();
-  ink(ctx, 1.5);
-}
-
-/** An arm or leg: a thick colored stroke with an ink edge. */
-function limb(
-  ctx: Ctx,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-  color: string,
-) {
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 9;
-  ctx.stroke();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 5.5;
-  ctx.stroke();
-}
-
+/**
+ * A steel grab: a shackle on the rope, a hinged block, and two hooked jaws
+ * that close around whatever it catches.
+ */
 function drawClaw(
   ctx: Ctx,
   x: number,
@@ -319,36 +69,57 @@ function drawClaw(
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(-angle);
-  const spread = closed ? 0.2 : 0.75;
+  const open = closed ? 0 : 1;
   for (const side of [-1, 1]) {
+    const s = side;
     ctx.beginPath();
-    ctx.moveTo(side * 3, 2);
-    ctx.quadraticCurveTo(
-      side * 17 * Math.sin(spread + 0.5),
-      12,
-      side * 7 * Math.sin(spread),
-      21,
+    ctx.moveTo(s * 3, 3);
+    ctx.bezierCurveTo(
+      s * (13 + open * 6),
+      5,
+      s * (15 + open * 6),
+      16,
+      s * (5 + open * 6),
+      23,
     );
-    ctx.lineTo(side * 2 * Math.sin(spread), 18);
-    ctx.lineCap = "round";
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 7;
-    ctx.stroke();
-    ctx.strokeStyle = "#8f9ba6";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-    ctx.strokeStyle = "#d7dee4";
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
+    ctx.lineTo(s * (2 + open * 4), 20);
+    ctx.bezierCurveTo(
+      s * (8 + open * 5),
+      15,
+      s * (8 + open * 4),
+      9,
+      s * 1,
+      7,
+    );
+    ctx.closePath();
+    const steel = ctx.createLinearGradient(s * 4, 0, s * 16, 20);
+    steel.addColorStop(0, "#e2e8ed");
+    steel.addColorStop(0.5, "#9aa6b1");
+    steel.addColorStop(1, "#5e6a75");
+    ctx.fillStyle = steel;
+    ctx.fill();
+    ink(ctx, 1.8);
   }
+  // Shackle where the rope ties on.
   ctx.beginPath();
-  ctx.roundRect(-7, -5, 14, 9, 3);
-  ctx.fillStyle = "#6f7c88";
+  ctx.ellipse(0, -7, 3.2, 4, 0, 0, Math.PI * 2);
+  ink(ctx, 3.6);
+  ctx.strokeStyle = "#9aa6b1";
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+  // Hinge block with a brass pin.
+  ctx.beginPath();
+  ctx.roundRect(-7.5, -4, 15, 10, 3.5);
+  const block = ctx.createLinearGradient(0, -4, 0, 6);
+  block.addColorStop(0, "#a3aeb8");
+  block.addColorStop(1, "#56626d");
+  ctx.fillStyle = block;
   ctx.fill();
   ink(ctx, 2);
-  circlePath(ctx, 0, 0, 2.4);
-  ctx.fillStyle = "#e0c060";
+  circlePath(ctx, 0, 1, 2.4);
+  ctx.fillStyle = "#e8c35a";
   ctx.fill();
+  ink(ctx, 1);
   ctx.restore();
 }
 
@@ -502,19 +273,25 @@ function drawHud(ctx: Ctx, state: GameState) {
   ctx.restore();
   outlinedText(ctx, `Level ${state.level}`, WIDTH - 138, 58, 16, "#ffe2a8", 4);
 
-  // Dynamite sticks on the left end of the platform.
-  const baseX = state.players[0].x - 56;
+  // Dynamite sticks standing on the left end of the deck.
+  const baseX = state.players[0].x - 42;
   const shown = Math.min(state.dynamite, 6);
   for (let i = 0; i < shown; i++) {
-    const sx = baseX - i * 9;
+    const sx = baseX - i * 7.5;
+    const top = DECK_Y - 21;
     ctx.beginPath();
-    ctx.roundRect(sx - 3.5, GROUND_Y - 36, 7, 22, 2);
-    ctx.fillStyle = "#d84330";
+    ctx.roundRect(sx - 3.5, top, 7, 21, 2);
+    const paper = ctx.createLinearGradient(sx - 3.5, 0, sx + 3.5, 0);
+    paper.addColorStop(0, "#f06a52");
+    paper.addColorStop(1, "#b52a1c");
+    ctx.fillStyle = paper;
     ctx.fill();
     ink(ctx, 1.5);
+    ctx.fillStyle = "#f3e2b8";
+    ctx.fillRect(sx - 3, top + 8, 6, 4);
     ctx.beginPath();
-    ctx.moveTo(sx, GROUND_Y - 36);
-    ctx.quadraticCurveTo(sx + 2, GROUND_Y - 41, sx + 4, GROUND_Y - 42);
+    ctx.moveTo(sx, top);
+    ctx.quadraticCurveTo(sx + 2, top - 5, sx + 4, top - 6);
     ink(ctx, 1.2);
   }
   if (state.dynamite > shown) {
@@ -522,8 +299,8 @@ function drawHud(ctx: Ctx, state: GameState) {
     outlinedText(
       ctx,
       `×${state.dynamite}`,
-      baseX - shown * 9,
-      GROUND_Y - 26,
+      baseX - shown * 7.5,
+      DECK_Y - 10,
       15,
       "#fff4d6",
       3,
