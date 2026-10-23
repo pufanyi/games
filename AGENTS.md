@@ -151,8 +151,8 @@ that line too (and vice versa).
 
 - `game/`: deterministic simulation, level generation, item definitions, shared
   tuning constants, shop rules, and seeded RNG. No browser or React imports.
-- `rendering/`: Canvas drawing, scenery, the miner's camp, sprites, and painting
-  helpers; reads game state without mutating it.
+- `rendering/`: Canvas drawing, scenery, the miner's camp, the claw, sprites,
+  and painting helpers; reads game state without mutating it.
 - `runtime/`: browser session, audio, and local storage.
 - `ui/`: React menus, controls, SVG art for the screens, the Canvas host, and
   CSS. React receives view updates only when the view changes; Canvas owns frame
