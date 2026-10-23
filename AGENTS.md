@@ -72,6 +72,21 @@ that line too (and vice versa).
   so relative paths resolve.
 - The three `sample-*` entries in `games.ts` are layout placeholders; remove
   them as real games are added.
+- A game can have a `games/<slug>/DESIGN.md` with its requirements as a
+  checklist. Read it before working on that game and tick items off as they're
+  built. Open decisions are marked **Decision:**; ask the user rather than
+  picking one.
+- The "coming soon" test picks whichever registered game has no `index.html` yet
+  and skips itself once every game is built, so building a game doesn't break
+  it.
+
+## Games
+
+| Game       | Status                               | Design                       |
+| ---------- | ------------------------------------ | ---------------------------- |
+| Gold Miner | Designed, not built (user writes it) | `games/gold-miner/DESIGN.md` |
+
+The user writes the games themselves; don't write game code unless asked.
 
 ## Conventions
 

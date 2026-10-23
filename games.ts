@@ -6,9 +6,16 @@ export interface Game {
   tags: string[];
 }
 
-// The entries below are placeholders to show the layout — replace them with
-// real games as you write them.
 export const games: Game[] = [
+  {
+    slug: "gold-miner",
+    title: "Gold Miner",
+    description:
+      "Swing the claw and haul up gold and diamonds before time runs out.",
+    tags: ["arcade", "classic"],
+  },
+  // The sample-* entries are placeholders to show the layout — remove them as
+  // real games are written.
   {
     slug: "sample-platformer",
     title: "Sample Platformer",
