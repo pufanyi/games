@@ -40,7 +40,7 @@ export function TitleScreen(
   return (
     <Panel label="Gold Miner">
       <h1>Gold Miner</h1>
-      <p>
+      <p className="tagline">
         Swing the claw, haul up gold and diamonds, and reach each level's goal
         before time runs out.
       </p>
