@@ -85,12 +85,16 @@ export function PowerBar({
   onPower,
   onShoot,
   onCancel,
+  onCharge,
+  onRelease,
   onTurn,
 }: {
   view: View;
   onPower: (power: number, pulling: boolean) => void;
   onShoot: () => void;
   onCancel: () => void;
+  onCharge: () => void;
+  onRelease: () => void;
   onTurn: (radians: number) => void;
 }) {
   const ready = view.phase === "aiming" && !view.paused;
@@ -98,18 +102,38 @@ export function PowerBar({
     const [, y] = within(event);
     onPower((1 - y) / 2, true);
   };
+  const adjustable = ready && !view.charging;
+  const percent = Math.round(view.power * 100);
   const fine = 0.25 * (Math.PI / 180);
   return (
     <div className="power">
-      <span className="power-label">Power</span>
+      <span className="power-label">Strength</span>
+      <span className="strength-value">{percent}%</span>
       <div
         className={ready ? "power-bar" : "power-bar disabled"}
         role="slider"
-        tabIndex={-1}
-        aria-label="Power: pull down and let go to shoot"
-        aria-valuenow={Math.round(view.power * 100)}
+        tabIndex={adjustable ? 0 : -1}
+        aria-label="Strength: drag and release to shoot"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-disabled={!adjustable}
+        aria-orientation="vertical"
+        aria-valuenow={percent}
+        onKeyDown={(event) => {
+          if (!adjustable) return;
+          const change = event.key === "ArrowUp"
+            ? 0.05
+            : event.key === "ArrowDown"
+            ? -0.05
+            : 0;
+          if (change) {
+            event.preventDefault();
+            event.stopPropagation();
+            onPower(view.power + change, false);
+          }
+        }}
         onPointerDown={(event) => {
-          if (!ready) return;
+          if (!adjustable || event.button !== 0) return;
           event.currentTarget.setPointerCapture(event.pointerId);
           set(event);
         }}
@@ -124,18 +148,57 @@ export function PowerBar({
           onShoot();
         }}
         onPointerCancel={onCancel}
+        onLostPointerCapture={onCancel}
       >
         <div
           className="power-fill"
           style={{ height: `${view.power * 100}%` }}
         />
       </div>
+      <button
+        type="button"
+        className="control charge-button"
+        disabled={!ready}
+        aria-label="Hold to charge, release to shoot"
+        onPointerDown={(event) => {
+          if (event.button !== 0 || view.charging) return;
+          event.currentTarget.setPointerCapture(event.pointerId);
+          onCharge();
+        }}
+        onPointerUp={(event) => {
+          if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+          onRelease();
+          event.currentTarget.releasePointerCapture(event.pointerId);
+          event.currentTarget.blur();
+        }}
+        onPointerCancel={onCancel}
+        onLostPointerCapture={onCancel}
+        onBlur={onCancel}
+        onContextMenu={(event) => event.preventDefault()}
+        onKeyDown={(event) => {
+          if (event.key !== " " && event.key !== "Enter") return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (!event.repeat) onCharge();
+        }}
+        onKeyUp={(event) => {
+          if (event.key !== " " && event.key !== "Enter") return;
+          event.preventDefault();
+          event.stopPropagation();
+          onRelease();
+        }}
+      >
+        {view.charging ? "Release" : "Hold"}
+      </button>
+      <span className="charge-hint">
+        {view.charging && percent === 100 ? "MAX" : "Space"}
+      </span>
       <div className="fine-aim">
         <button
           type="button"
           className="control"
           aria-label="Turn aim left"
-          disabled={!ready}
+          disabled={!adjustable}
           onClick={() => onTurn(fine)}
         >
           ↺
@@ -144,7 +207,7 @@ export function PowerBar({
           type="button"
           className="control"
           aria-label="Turn aim right"
-          disabled={!ready}
+          disabled={!adjustable}
           onClick={() => onTurn(-fine)}
         >
           ↻

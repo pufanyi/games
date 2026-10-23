@@ -214,8 +214,16 @@ judge(state: GameState, result: ShotResult): Outcome;
       one way to shoot rather than a separate drag-back on the table
 - [x] Touch: drag on the table to aim, the power bar to shoot; fine-aim buttons
       under it
-- [x] Keyboard: ← → aim (Shift for fine), ↑ ↓ power, Space shoots, W A S D spin,
-      M picks the cue ball up again with ball in hand
+- [x] Keyboard: ← → aim (Shift for fine), ↑ ↓ strength, Enter shoots at the set
+      strength, W A S D spin, M picks the cue ball up with ball in hand
+- [x] Hold Space or the on-screen Hold button to charge from 0 to 100% over 1.5
+      seconds; release to shoot. Maximum strength holds without firing. The
+      numeric Strength indicator and cue pullback show the current charge
+- [x] Charging locks aim, spin, and elevation. Pause, window blur, hidden tab,
+      pointer cancellation, and timeout cancel the charge without shooting. Only
+      the input that started a charge can release it
+- [x] Dragging the strength bar remains available for precise shots. Strength is
+      normalized player input; cue speed retains its quadratic mapping
 - [x] Spin: a cue ball diagram where you place the tip, limited to the miscue
       radius; an elevation slider (0–60°) for swerve and massé. Both reset to a
       center hit with a level cue after each shot

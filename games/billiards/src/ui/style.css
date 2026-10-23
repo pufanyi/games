@@ -362,7 +362,7 @@ kbd {
 .power-bar {
   position: relative;
   width: 2.6cqw;
-  height: 26cqw;
+  height: 18cqw;
   overflow: hidden;
   border: 2px solid var(--ink);
   border-radius: 0.6cqw;
@@ -451,4 +451,21 @@ kbd {
   color: #17191c;
   background: #f5f1e5;
   font: bold 0.75cqw Arial, sans-serif;
+}
+
+.strength-value {
+  color: var(--brass);
+  font-size: 1.6cqw;
+  font-variant-numeric: tabular-nums;
+}
+
+.charge-button {
+  touch-action: none;
+  user-select: none;
+  min-height: max(3.5cqw, 44px);
+}
+
+.charge-hint {
+  font-size: 0.9cqw;
+  color: var(--brass);
 }
