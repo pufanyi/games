@@ -1,18 +1,30 @@
 /* The game fills its window (the platform's iframe, or a tab of its own) and
    letterboxes the 4:3 stage in it. Everything inside the stage scales with the
-   stage via container query units. */
+   stage via container query units. The look matches the canvas: ink
+   outlines, wood, parchment, and gold. */
+
+@font-face {
+  font-family: "Lilita One";
+  src: url("./fonts/LilitaOne-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
 
 :root {
   color-scheme: dark;
-  --letterbox: #120c06;
-  --panel: #fffaf2;
-  --panel-text: #2b1d0e;
-  --muted: #7a6650;
-  --border: #e2d4bf;
-  --accent: #d4930f;
-  --accent-text: #2b1d0e;
-  --highlight: #1e7a34;
-  --overlay: rgb(30 18 6 / 0.62);
+  --ink: #3a2312;
+  --letterbox: #1a0f06;
+  --parchment: #fff6df;
+  --parchment-edge: #ecd5a6;
+  --wood: #a86d38;
+  --wood-light: #d69a5c;
+  --text: #3a2312;
+  --muted: #7a5a3a;
+  --gold: #ffd23f;
+  --gold-deep: #e09b12;
+  --highlight: #2e7d32;
+  --overlay: rgb(26 14 4 / 0.6);
+  --display: "Lilita One", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -31,7 +43,8 @@ body {
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: var(--letterbox);
+  background:
+    radial-gradient(circle at 50% 40%, #2e1b0c, var(--letterbox) 70%);
   line-height: 1.4;
 }
 
@@ -67,33 +80,66 @@ canvas {
   place-items: center;
   padding: 3cqw;
   overflow-y: auto;
-  background: var(--overlay);
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgb(26 14 4 / 0.35),
+    var(--overlay) 75%
+  );
+  animation: fade-in 160ms ease-out;
 }
 
 .panel {
-  width: min(100%, 66cqw);
+  position: relative;
+  width: min(100%, 64cqw);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.4cqw;
-  padding: 2.6cqw 3cqw;
+  padding: 3cqw 3.4cqw;
   font-size: clamp(11px, 2.1cqw, 17px);
   text-align: center;
-  color: var(--panel-text);
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 1.6cqw;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 50% 0%, #fffdf4, transparent 60%),
+    linear-gradient(var(--parchment), var(--parchment-edge));
+  border: max(3px, 0.5cqw) solid var(--wood);
+  border-radius: 1.8cqw;
+  box-shadow:
+    0 0 0 max(2px, 0.25cqw) var(--ink),
+    inset 0 0 0 max(2px, 0.3cqw) var(--wood-light),
+    0 1.2cqw 0 rgb(0 0 0 / 0.35);
+  animation: pop-in 220ms cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
 .panel h1,
 .panel h2 {
   margin: 0;
-  font-size: 1.6em;
+  font-family: var(--display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--text);
 }
 
+.panel h2 {
+  font-size: 1.9em;
+}
+
+/* The title logo: gold letters with an ink outline and a drop. */
 .panel h1 {
-  font-size: 2.2em;
-  color: #b7860b;
+  font-size: 3.6em;
+  line-height: 1;
+  color: var(--gold);
+  background: linear-gradient(#fff3b0 10%, var(--gold) 45%, var(--gold-deep));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: max(2px, 0.35cqw) var(--ink);
+  paint-order: stroke fill;
+  filter: drop-shadow(0 0.5cqw 0 rgb(58 35 18 / 0.45));
+}
+
+.tagline {
+  max-width: 38em;
 }
 
 .panel p {
@@ -106,47 +152,62 @@ canvas {
 }
 
 .highlight {
+  font-family: var(--display);
+  font-size: 1.3em;
   color: var(--highlight);
-  font-weight: 700;
 }
 
 kbd {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 0.85em;
-  padding: 0 0.35em;
-  border: 1px solid var(--border);
-  border-bottom-width: 2px;
-  border-radius: 4px;
+  font-family: var(--display);
+  font-size: 0.9em;
+  padding: 0 0.4em;
+  color: var(--text);
+  background: #fffaf0;
+  border: 1.5px solid var(--ink);
+  border-bottom-width: 3px;
+  border-radius: 0.35em;
 }
 
+/* Chunky buttons that press down. */
 .button {
-  font: inherit;
-  font-weight: 600;
-  padding: 0.45em 1.2em;
-  border: 1px solid var(--border);
-  border-radius: 0.6em;
-  background: var(--panel);
-  color: var(--panel-text);
+  font-family: var(--display);
+  font-size: 1.15em;
+  letter-spacing: 0.02em;
+  padding: 0.35em 1.4em 0.45em;
+  color: var(--text);
+  background: linear-gradient(#fffaf0, #ead8b5);
+  border: max(2px, 0.3cqw) solid var(--ink);
+  border-radius: 0.7em;
+  box-shadow: 0 0.25em 0 var(--ink);
   cursor: pointer;
+  transition: transform 80ms, box-shadow 80ms;
 }
 
 .button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-text);
+  font-size: 1.4em;
+  background: linear-gradient(#fff3a6, var(--gold) 45%, var(--gold-deep));
+}
+
+.button:hover {
+  filter: brightness(1.05);
+}
+
+.button:active {
+  transform: translateY(0.2em);
+  box-shadow: 0 0.05em 0 var(--ink);
 }
 
 .button:focus-visible,
 .offer:focus-visible,
 .control:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: 3px solid #fffaf0;
+  outline-offset: 3px;
 }
 
 .offers {
   width: 100%;
   display: grid;
-  gap: 0.6em;
+  gap: 0.7em;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14em), 1fr));
 }
 
@@ -154,18 +215,25 @@ kbd {
   font: inherit;
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 0.1em 0.6em;
+  gap: 0.15em 0.6em;
   padding: 0.6em 0.8em;
   text-align: left;
-  border: 1px solid var(--border);
-  border-radius: 0.6em;
-  background: #f4ede2;
-  color: var(--panel-text);
+  color: var(--text);
+  background: #fffdf6;
+  border: 2px solid var(--ink);
+  border-radius: 0.7em;
+  box-shadow: 0 0.2em 0 var(--ink);
   cursor: pointer;
+  transition: transform 80ms, box-shadow 80ms;
 }
 
 .offer:hover:not(:disabled) {
-  border-color: var(--accent);
+  background: #fff4cf;
+}
+
+.offer:active:not(:disabled) {
+  transform: translateY(0.15em);
+  box-shadow: 0 0.05em 0 var(--ink);
 }
 
 .offer:disabled {
@@ -175,11 +243,12 @@ kbd {
 
 .offer-name,
 .offer-price {
-  font-weight: 700;
+  font-family: var(--display);
+  font-size: 1.1em;
 }
 
 .offer-price {
-  color: #a8710a;
+  color: #b06f00;
 }
 
 .offer-description {
@@ -188,7 +257,7 @@ kbd {
   color: var(--muted);
 }
 
-/* On-screen controls, over the bottom-right of the mine */
+/* On-screen controls: little wooden buttons over the bottom-right corner. */
 
 .controls {
   position: absolute;
@@ -199,19 +268,26 @@ kbd {
 }
 
 .control {
-  font: inherit;
-  font-size: clamp(10px, 1.7cqw, 14px);
-  font-weight: 600;
-  padding: 0.35em 0.8em;
-  border: 1px solid rgb(255 255 255 / 0.25);
+  font-family: var(--display);
+  font-size: clamp(11px, 1.8cqw, 15px);
+  letter-spacing: 0.02em;
+  padding: 0.3em 0.8em 0.4em;
+  color: #fff4d6;
+  background: linear-gradient(var(--wood-light), var(--wood));
+  border: 2px solid var(--ink);
   border-radius: 0.6em;
-  background: rgb(20 12 4 / 0.55);
-  color: #fff7e6;
+  box-shadow: 0 0.2em 0 var(--ink);
+  text-shadow: 0 1px 0 var(--ink);
   cursor: pointer;
 }
 
+.control:active:not(:disabled) {
+  transform: translateY(0.15em);
+  box-shadow: 0 0.05em 0 var(--ink);
+}
+
 .control:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: default;
 }
 
@@ -220,6 +296,30 @@ kbd {
   min-width: 1.4em;
   margin-left: 0.3em;
   padding: 0 0.3em;
+  text-align: center;
+  color: var(--text);
+  background: var(--gold);
+  border: 1.5px solid var(--ink);
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.2);
+  text-shadow: none;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .panel {
+    animation: none;
+  }
 }

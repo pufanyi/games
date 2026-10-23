@@ -67,6 +67,32 @@ A random selection at random prices on each visit:
 - [x] Sound: firing, reel-back loop, grabs, explosions, cash register; mute
       toggle
 
+## Art direction
+
+Cartoon vector art in the style of classic Flash games, drawn entirely in code
+(no image files). Keep new art consistent with it:
+
+- [x] **Ink outlines** on every sprite (`INK` in `src/paint.ts`, about 2px),
+      over a gradient body lit from the top left, with a glossy highlight
+- [x] **Palette:** golden-hour sky, terracotta mesas, sienna-to-umber dirt
+      strata, warm gold, cool cyan diamonds, wood browns for UI
+- [x] **Scenery** (`src/scenery.ts`): sky with sun and drifting clouds, mesas,
+      layered dirt with speckles, pebbles, roots, and two hidden fossils; static
+      layers are painted once into offscreen canvases
+- [x] **Sprites** (`src/sprites.ts`): faceted gold with twinkles, cracked rocks,
+      cut diamonds, tied sacks, barrels of TNT with a lit fuse, and moles;
+      buried items sit in a darker pocket of dirt
+- [x] **Miner and winch** (`src/render.ts`): a bearded prospector in a hard hat
+      turning a crank, belted to a pulley on an A-frame
+- [x] **Effects:** popping money text; explosions with a flash, shock ring,
+      smoke, and debris
+- [x] **HUD:** wooden signboards with coin and clock icons, boost tags, and
+      dynamite sticks on the platform
+- [x] **Screens:** parchment panels in a wooden frame, chunky gold buttons that
+      press down, and the title in gold with an ink outline
+- [x] **Font:** Lilita One (SIL Open Font License), bundled in `src/fonts/` with
+      its license so the game works offline
+
 ## Technical
 
 - [x] Canvas 2D at a fixed internal resolution, scaled to fit the screen

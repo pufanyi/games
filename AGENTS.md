@@ -193,6 +193,10 @@ that line too (and vice versa).
 - Styling: plain CSS with custom properties on `:root` and a
   `prefers-color-scheme: dark` override; new UI uses those tokens and works at
   phone width (16px gutters, no horizontal scroll).
+- Third-party assets (fonts, images, sounds) need a license that allows
+  redistribution, and are bundled with the game alongside their license file
+  (e.g. `games/gold-miner/src/fonts/`), not loaded from a CDN, so games work
+  offline and on their own.
 - `localStorage` access is wrapped in try/catch and only for per-viewer
   conveniences (e.g. the remembered grid/list view).
 - Tests sit next to the code (`*_test.ts`/`*_test.tsx`). Test logic without a
