@@ -143,11 +143,11 @@ that line too (and vice versa).
 
 ## Games
 
-| Game       | Status                                                    | Design                       |
-| ---------- | --------------------------------------------------------- | ---------------------------- |
-| Gold Miner | v1: single-player complete; multiplayer not started       | `games/gold-miner/DESIGN.md` |
-| Billiards  | Single-player complete; two-player not started            | `games/billiards/DESIGN.md`  |
-| Bomb It 3  | Four modes and local two-player; fidelity gaps documented | `games/bomb-it-3/DESIGN.md`  |
+| Game       | Status                                                       | Design                       |
+| ---------- | ------------------------------------------------------------ | ---------------------------- |
+| Gold Miner | v1: single-player complete; multiplayer not started          | `games/gold-miner/DESIGN.md` |
+| Billiards  | Single-player complete with cue view; two-player not started | `games/billiards/DESIGN.md`  |
+| Bomb It 3  | Four modes and local two-player; fidelity gaps documented    | `games/bomb-it-3/DESIGN.md`  |
 
 ### Bomb It 3 source organization
 
@@ -205,12 +205,15 @@ imports. UI composes the browser runtime and renderer; lower layers never import
 UI. Keep cohesive modules together rather than adding folders solely to reduce
 the number of files at one level.
 
-`games/billiards/src/rendering/` owns the Three.js WebGL renderer, camera
-projection and picking, table/ball/cue meshes, guides, and procedural textures.
-`physics/` and `rules/` remain independent of Three.js and the browser. React
-owns menus and controls; it does not render each animation frame. The default
-perspective view and optional top view share the same physics coordinates (x/y
-on the table, z up). Pointer input uses camera rays at ball-center height.
+`games/billiards/src/rendering/` owns the Three.js WebGL renderer, camera rig
+and picking, table/ball/cue meshes, guides, and procedural textures. `physics/`
+and `rules/` remain independent of Three.js and the browser. React owns menus
+and controls; it does not render each animation frame. The default cue view
+(behind the cue ball, following the aim, rising to an overview while balls roll)
+and the optional top view share the same physics coordinates (x/y on the table,
+z up). Pointer input uses camera rays at ball-center height; in the cue view a
+table drag turns the aim instead, since the camera follows it. The aim guide is
+a per-viewer setting, off by default.
 
 Three.js and its types are pinned in the game's `deno.json`. Generated textures
 need no external assets; `public/licenses/three.txt` ships the Three.js MIT
@@ -220,12 +223,13 @@ after graphics-context restoration.
 Billiards strength and charge state live in `runtime/session.ts`. Space or the
 Hold button charges from zero over 1.5 seconds; matching release fires. Holding
 the left mouse button on the table does the same, except when placing or picking
-up the cue ball. Table gestures have separate charge ownership from the Hold
-button; touch on the table remains drag-to-aim. Enter fires preset strength, and
-dragging the bar remains available. Cancellation must disarm release on pause,
-focus loss, pointer interruption, or game end. Keep charge ownership explicit so
-keyboard and pointer inputs cannot fire each other's shots. Physics receives cue
-speed, not charge timing.
+up the cue ball, or once a cue-view press turns into a drag (which cancels the
+charge and restores the strength set before it). Table gestures have separate
+charge ownership from the Hold button; touch on the table remains drag-to-aim.
+Enter fires preset strength, and dragging the bar remains available.
+Cancellation must disarm release on pause, focus loss, pointer interruption, or
+game end. Keep charge ownership explicit so keyboard and pointer inputs cannot
+fire each other's shots. Physics receives cue speed, not charge timing.
 
 ## Coding standard
 

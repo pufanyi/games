@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import type { CameraView } from "../rendering/camera.ts";
 import { Renderer } from "../rendering/renderer.ts";
 import {
-  isActive,
   sameView,
   type Session,
   setPaused,
@@ -17,13 +17,13 @@ export function useTableRenderer(
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
-  const [cameraView, setCameraView] = useState<"table" | "top">("table");
-  const cameraViewRef = useRef<"table" | "top">("table");
+  const [cameraView, setCameraView] = useState<CameraView>("cue");
+  const cameraViewRef = useRef<CameraView>("cue");
   const [renderError, setRenderError] = useState(false);
   const [renderAttempt, setRenderAttempt] = useState(0);
 
   function switchCamera() {
-    const next = cameraViewRef.current === "table" ? "top" : "table";
+    const next = cameraViewRef.current === "cue" ? "top" : "cue";
     cameraViewRef.current = next;
     rendererRef.current?.setView(next);
     setCameraView(next);
@@ -60,7 +60,7 @@ export function useTableRenderer(
       const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
       update(session, dt);
-      renderer.draw(session, isActive(session) ? dt : 0);
+      renderer.draw(session, dt);
       const next = viewOf(session);
       if (!sameView(displayed, next)) {
         displayed = next;
