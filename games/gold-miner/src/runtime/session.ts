@@ -1,16 +1,11 @@
+import type { Offer } from "../game/shop.ts";
 // Everything outside the simulation that the game loop and the screens share:
 // which screen is up, pause, queued inputs, and the best score. Plain TS so the
 // loop can change it 60 times a second without involving React; the screens
 // get a small `View` of it instead.
 import { play, setMuted, unlock } from "./audio.ts";
-import { goalFor } from "./level.ts";
-import {
-  createGame,
-  type GameState,
-  type Input,
-  type Offer,
-  step,
-} from "./sim.ts";
+import { goalFor } from "../game/level.ts";
+import { createGame, type GameState, type Input, step } from "../game/sim.ts";
 import {
   type Best,
   loadBest,

@@ -1,80 +1,29 @@
 // The game simulation. No DOM, canvas, clocks, or Math.random(): `step` depends
 // only on the state and the inputs, and the state is plain JSON. Rendering,
 // input, sound, and screens live in other modules.
+import { generateItems, goalFor } from "./level.ts";
+import { type Item, itemWeight, KINDS } from "./items.ts";
+import { randInt, random } from "./rng.ts";
+
 import {
-  generateItems,
-  goalFor,
+  BAG_REWARDS,
+  CLAW_RADIUS,
+  DT,
+  DYNAMITE_RADIUS,
+  EXPLOSION_RADIUS,
+  EXTEND_SPEED,
   HEIGHT,
-  type Item,
-  KINDS,
+  LEVEL_SECONDS,
+  PIVOT_Y,
+  REST_LENGTH,
+  RETRACT_SPEED,
+  STRENGTH_MULTIPLIER,
+  SWING_LIMIT,
+  SWING_SPEED,
+  TICK_RATE,
   WIDTH,
-} from "./level.ts";
-import { chance, randInt, random } from "./rng.ts";
-
-export const TICK_RATE = 60;
-export const DT = 1 / TICK_RATE;
-export const LEVEL_SECONDS = 60;
-/** Where the rope leaves the winch. */
-export const PIVOT_Y = 108;
-
-export const SWING_LIMIT = (70 * Math.PI) / 180;
-const SWING_SPEED = 1.9; // rad/s
-export const REST_LENGTH = 28;
-const EXTEND_SPEED = 380; // px/s
-const RETRACT_SPEED = 560; // px/s with nothing attached
-const STRENGTH_MULTIPLIER = 1.6;
-const CLAW_RADIUS = 8;
-export const EXPLOSION_RADIUS = 110;
-
-export type ShopItem = "dynamite" | "strength" | "clover" | "book" | "polish";
-
-/** Prices are `randInt(min, max) + perLevel * (level - 1)`. */
-export const SHOP_ITEMS: Record<
-  ShopItem,
-  {
-    label: string;
-    description: string;
-    min: number;
-    max: number;
-    perLevel: number;
-  }
-> = {
-  dynamite: {
-    label: "Dynamite",
-    description: "Press ↑ while reeling in to blow up what you're holding.",
-    min: 10,
-    max: 60,
-    perLevel: 12,
-  },
-  strength: {
-    label: "Strength drink",
-    description: "Reel everything in faster next level.",
-    min: 60,
-    max: 260,
-    perLevel: 20,
-  },
-  clover: {
-    label: "Lucky clover",
-    description: "Mystery bags pay out better next level.",
-    min: 15,
-    max: 120,
-    perLevel: 15,
-  },
-  book: {
-    label: "Rock collector's book",
-    description: "Rocks are worth three times as much next level.",
-    min: 10,
-    max: 80,
-    perLevel: 8,
-  },
-  polish: {
-    label: "Diamond polish",
-    description: "Diamonds are worth 50% more next level.",
-    min: 100,
-    max: 400,
-    perLevel: 30,
-  },
-};
+} from "./config.ts";
+import { type Offer, rollOffers, type ShopItem } from "./shop.ts";
 
 export interface Claw {
   state: "swing" | "extend" | "retract";
@@ -127,12 +76,6 @@ export interface GameEvent {
     | "buy"
     | "levelClear"
     | "gameOver";
-}
-
-export interface Offer {
-  item: ShopItem;
-  price: number;
-  sold: boolean;
 }
 
 export interface GameState {
@@ -226,8 +169,7 @@ function stepPlaying(state: GameState, inputs: Input[]) {
       state.dynamite--;
       const { x, y } = claw.item;
       claw.item = null;
-      state.effects.push(explosion(x, y, 50));
-      state.events.push({ type: "explode" });
+      blast(state, x, y, DYNAMITE_RADIUS);
     }
   }
 
@@ -288,12 +230,12 @@ function stepClaw(state: GameState, player: Player) {
     state.items = state.items.filter((item) => item !== hit);
     claw.item = hit;
     hangFromClaw(player);
-    const heavy = KINDS[hit.kind].weight >= 3;
+    const heavy = itemWeight(hit) >= 3;
     state.events.push({ type: heavy ? "grabHeavy" : "grab" });
     return;
   }
 
-  const weight = claw.item ? KINDS[claw.item.kind].weight : 1;
+  const weight = claw.item ? itemWeight(claw.item) : 1;
   const strength = state.boosts.strength ? STRENGTH_MULTIPLIER : 1;
   claw.length -= (RETRACT_SPEED / weight) * strength * DT;
   if (claw.item) {
@@ -334,11 +276,14 @@ function hangFromClaw(player: Player) {
 /** Blows up a TNT barrel and everything near it, setting off other barrels. */
 function explode(state: GameState, tnt: Item) {
   state.items = state.items.filter((item) => item !== tnt);
-  state.effects.push(explosion(tnt.x, tnt.y, EXPLOSION_RADIUS));
+  blast(state, tnt.x, tnt.y, EXPLOSION_RADIUS);
+}
+
+function blast(state: GameState, x: number, y: number, radius: number) {
+  state.effects.push(explosion(x, y, radius));
   state.events.push({ type: "explode" });
   const caught = state.items.filter(
-    (item) =>
-      Math.hypot(item.x - tnt.x, item.y - tnt.y) < EXPLOSION_RADIUS + item.r,
+    (item) => Math.hypot(item.x - x, item.y - y) < radius + item.r,
   );
   state.items = state.items.filter((item) => !caught.includes(item));
   for (const item of caught) {
@@ -386,21 +331,24 @@ export function itemValue(state: GameState, item: Item): number {
 function deliver(state: GameState, item: Item) {
   if (item.kind === "bag") {
     const roll = random(state);
-    if (roll < 0.2) {
+    if (roll < BAG_REWARDS.dynamiteChance) {
       state.dynamite++;
       popup(state, "+1 Dynamite!");
       state.events.push({ type: "bonus" });
       return;
     }
-    if (roll < 0.35 && !state.boosts.strength) {
+    if (
+      roll < BAG_REWARDS.dynamiteChance + BAG_REWARDS.strengthChance &&
+      !state.boosts.strength
+    ) {
       state.boosts.strength = true;
       popup(state, "Strength!");
       state.events.push({ type: "bonus" });
       return;
     }
     const amount = state.boosts.clover
-      ? randInt(state, 150, 800)
-      : randInt(state, 20, 400);
+      ? randInt(state, BAG_REWARDS.luckyCashMin, BAG_REWARDS.luckyCashMax)
+      : randInt(state, BAG_REWARDS.cashMin, BAG_REWARDS.cashMax);
     earn(state, amount);
     return;
   }
@@ -419,24 +367,12 @@ function endLevel(state: GameState) {
   state.boosts = noBoosts();
   if (state.money >= state.goal) {
     state.phase = "shop";
-    state.shop = { offers: rollOffers(state) };
+    state.shop = { offers: rollOffers(state, state.level) };
     state.events.push({ type: "levelClear" });
   } else {
     state.phase = "gameOver";
     state.events.push({ type: "gameOver" });
   }
-}
-
-/** A random selection of shop items at random prices; never empty. */
-function rollOffers(state: GameState): Offer[] {
-  const all = Object.keys(SHOP_ITEMS) as ShopItem[];
-  let picked = all.filter(() => chance(state, 0.6));
-  if (picked.length === 0) picked = [all[randInt(state, 0, all.length - 1)]];
-  return picked.map((item) => {
-    const { min, max, perLevel } = SHOP_ITEMS[item];
-    const price = randInt(state, min, max) + perLevel * (state.level - 1);
-    return { item, price, sold: false };
-  });
 }
 
 function stepShop(state: GameState, inputs: Input[]) {

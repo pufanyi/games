@@ -1,17 +1,21 @@
 import { assert, assertEquals } from "@std/assert";
-import { goalFor, type Kind, KINDS } from "./level.ts";
+import { goalFor } from "./level.ts";
+import { type Kind, KINDS } from "./items.ts";
 import {
   createGame,
   type GameEvent,
   type GameState,
   type Input,
+  itemValue,
+  step,
+} from "./sim.ts";
+import {
   LEVEL_SECONDS,
   PIVOT_Y,
   REST_LENGTH,
-  step,
   SWING_LIMIT,
   TICK_RATE,
-} from "./sim.ts";
+} from "./config.ts";
 
 /** A game with one item straight below the miner and the claw pointing at it. */
 function aimedAt(kind: Kind, depth = 300) {
@@ -97,7 +101,7 @@ Deno.test("grabbing gold pays out when it reaches the top", () => {
 
 Deno.test("heavy items reel in more slowly", () => {
   const light = fireAndWait(aimedAt("goldSmall"));
-  const heavy = fireAndWait(aimedAt("goldLarge"));
+  const heavy = fireAndWait(aimedAt("goldHuge"));
   assert(heavy > light * 2, `light ${light}, heavy ${heavy}`);
 });
 
@@ -178,4 +182,116 @@ Deno.test("the state survives a JSON round trip", () => {
     step(copy, i === 30 ? inputs : []);
   }
   assertEquals(copy, original);
+});
+
+Deno.test("gold payouts have all four classic denominations", () => {
+  for (
+    const [kind, value] of [
+      ["goldSmall", 50],
+      ["goldMedium", 100],
+      ["goldLarge", 250],
+      ["goldHuge", 500],
+    ] as const
+  ) {
+    const state = aimedAt(kind);
+    fireAndWait(state);
+    assertEquals(state.money, value);
+  }
+});
+
+/** Measures only the return journey, with another item keeping the level open. */
+function returnTime(kind: Kind, strength = false, weight?: number) {
+  const state = aimedAt(kind);
+  const claw = state.players[0].claw;
+  const item = state.items[0];
+  item.weight = weight;
+  state.items = [{ id: 1000, kind: "bone", x: 30, y: 500, r: 14 }];
+  claw.item = item;
+  claw.length = REST_LENGTH + 350;
+  claw.state = "retract";
+  state.boosts.strength = strength;
+  let ticks = 0;
+  while (state.players[0].claw.state === "retract" && ticks < 3600) {
+    step(state);
+    ticks++;
+  }
+  assertEquals(state.players[0].claw.state, "swing");
+  return ticks / TICK_RATE;
+}
+
+Deno.test("heavy gold takes seconds to haul and strength saves about eight", () => {
+  const normal = returnTime("goldHuge");
+  const boosted = returnTime("goldHuge", true);
+  assert(normal >= 12 && normal <= 13);
+  assert(boosted >= 4.9 && boosted <= 5.1);
+  assert(normal - boosted >= 7 && normal - boosted <= 8);
+  assert(returnTime("diamond") < 1);
+  assert(returnTime("rockLarge") > normal);
+});
+
+Deno.test("bag weight affects hauling without changing its appearance", () => {
+  assert(returnTime("bag", false, 20) > returnTime("bag", false, 1.4) * 10);
+  const weights = new Set<number>();
+  for (let seed = 1; seed <= 100; seed++) {
+    const game = createGame(seed);
+    for (const item of game.items.filter((i) => i.kind === "bag")) {
+      assert(item.weight !== undefined);
+      weights.add(item.weight);
+      assertEquals(item.r, KINDS.bag.r);
+    }
+    assert(!game.items.some((i) => i.kind === "diamond"));
+  }
+  assertEquals(weights.size, 4);
+});
+
+Deno.test("dynamite damages nearby treasure and triggers TNT chains", () => {
+  const state = aimedAt("rockLarge");
+  const claw = state.players[0].claw;
+  claw.item = state.items[0];
+  claw.state = "retract";
+  claw.length = 300;
+  const { x, y } = claw.item;
+  state.items = [
+    { id: 1, kind: "goldSmall", x: x + 30, y, r: 13 },
+    { id: 2, kind: "tnt", x: x + 50, y, r: 17 },
+    { id: 3, kind: "tnt", x: x + 150, y, r: 17 },
+    { id: 4, kind: "diamond", x: x + 240, y, r: 10 },
+    { id: 5, kind: "diamond", x: 20, y: 550, r: 10 },
+  ];
+  state.dynamite = 1;
+  step(state, [{ player: 0, action: "dynamite" }]);
+  assertEquals(claw.item, null);
+  assertEquals(state.items.map((i) => i.id), [5]);
+  assertEquals(state.money, 0);
+  assertEquals(state.dynamite, 0);
+  assertEquals(state.events.filter((e) => e.type === "explode").length, 3);
+});
+
+Deno.test("classic shop boosts preserve diamond and rock payouts", () => {
+  const state = aimedAt("diamond");
+  state.boosts.polish = true;
+  assertEquals(itemValue(state, state.items[0]), 900);
+  state.boosts.book = true;
+  assertEquals(itemValue(state, { ...state.items[0], kind: "rockSmall" }), 33);
+});
+
+Deno.test("bags can award small and large cash payouts without a clover", () => {
+  let min = Infinity;
+  let max = 0;
+  for (let seed = 1; seed <= 2000; seed++) {
+    const state = aimedAt("bag");
+    state.rng = seed;
+    const claw = state.players[0].claw;
+    claw.item = state.items[0];
+    claw.state = "retract";
+    claw.length = REST_LENGTH + 1;
+    state.items = [];
+    step(state);
+    if (state.money > 0) {
+      min = Math.min(min, state.money);
+      max = Math.max(max, state.money);
+    }
+  }
+  assert(min < 20, `minimum payout: ${min}`);
+  assert(max > 790, `maximum payout: ${max}`);
 });

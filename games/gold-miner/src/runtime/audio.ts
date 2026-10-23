@@ -1,5 +1,5 @@
 // Sound effects synthesized with Web Audio, so there are no files to load.
-import type { GameEvent } from "./sim.ts";
+import type { GameEvent } from "../game/sim.ts";
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;

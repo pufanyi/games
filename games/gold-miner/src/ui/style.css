@@ -5,7 +5,7 @@
 
 @font-face {
   font-family: "Lilita One";
-  src: url("./fonts/LilitaOne-latin.woff2") format("woff2");
+  src: url("../fonts/LilitaOne-latin.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
