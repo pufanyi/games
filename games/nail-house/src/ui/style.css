@@ -1,0 +1,792 @@
+/* Nail House owns its styling; nothing here is shared with the platform. */
+.nh-app {
+  --nh-ink: #f7e7c7;
+  --nh-gold: #ffd447;
+  --nh-ember: #e0562f;
+  --nh-panel: rgba(35, 18, 10, 0.9);
+  --nh-line: rgba(255, 212, 71, 0.28);
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 35%, #4a2814 0%, #24120a 55%, #120903 100%);
+  color: var(--nh-ink);
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, -apple-system, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.nh-stage {
+  position: relative;
+  width: min(100vw, 132vh);
+  aspect-ratio: 660 / 500;
+  max-height: 100vh;
+  overflow: hidden;
+  background: #d8a848;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 18px 60px rgba(0, 0, 0, 0.6);
+  container-type: size;
+  touch-action: manipulation;
+}
+
+.nh-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------------ shared */
+
+.nh-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+}
+
+.nh-modal-wrap {
+  padding: 3cqw;
+  background: rgba(18, 8, 3, 0.62);
+  backdrop-filter: blur(2px);
+}
+
+.nh-modal {
+  width: min(72cqw, 520px);
+  max-height: 88cqh;
+  overflow: auto;
+  padding: 3cqw 3.4cqw;
+  border-radius: 2cqw;
+  border: 1px solid var(--nh-line);
+  background: var(--nh-panel);
+  box-shadow: 0 1.4cqw 4cqw rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+
+.nh-modal h2 {
+  margin: 0 0 0.8cqw;
+  color: var(--nh-gold);
+  font-size: 4.4cqw;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0.35cqw 0 #6d2a12;
+}
+
+.nh-modal h3 {
+  margin: 2cqw 0 0.8cqw;
+  color: var(--nh-gold);
+  font-size: 2.2cqw;
+  text-align: left;
+}
+
+.nh-muted {
+  margin: 0 0 1.6cqw;
+  color: rgba(247, 231, 199, 0.72);
+  font-size: 1.7cqw;
+  line-height: 1.4;
+}
+
+.nh-btn {
+  appearance: none;
+  padding: 1.15cqw 2.2cqw;
+  border: 1px solid var(--nh-line);
+  border-radius: 1.4cqw;
+  background: #2c1a0f;
+  color: var(--nh-ink);
+  font: inherit;
+  font-size: 1.8cqw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+
+.nh-btn:hover {
+  background: #3d2414;
+}
+
+.nh-btn:active {
+  transform: translateY(1px);
+}
+
+.nh-btn-primary {
+  border-color: #ffb347;
+  background: var(--nh-ember);
+  color: #fff3d6;
+  box-shadow: 0 0.5cqw 0 #8c2f16;
+}
+
+.nh-btn-primary:hover {
+  background: #f06a3f;
+}
+
+.nh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9cqw;
+}
+
+.nh-actions-column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* ------------------------------------------------------------------- title */
+
+.nh-title {
+  place-items: center start;
+  padding: 5cqw;
+  background:
+    linear-gradient(
+    95deg,
+    rgba(18, 8, 3, 0.9) 0%,
+    rgba(18, 8, 3, 0.72) 46%,
+    rgba(18, 8, 3, 0.18) 72%,
+    rgba(18, 8, 3, 0) 100%
+  );
+}
+
+.nh-title-card {
+  max-width: 60cqw;
+}
+
+.nh-kicker {
+  margin: 0 0 1cqw;
+  color: #ffb347;
+  font-size: 1.5cqw;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.nh-title h1 {
+  margin: 0;
+  color: var(--nh-gold);
+  font-size: 8cqw;
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  text-shadow:
+    0 0.45cqw 0 #8d3526,
+    0 1cqw 0 rgba(0, 0, 0, 0.45);
+}
+
+.nh-title h1 span {
+  display: block;
+  margin-top: 1.4cqw;
+  color: #ffe9b0;
+  font-size: 2.2cqw;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+.nh-blurb {
+  max-width: 48cqw;
+  margin: 2cqw 0 2.4cqw;
+  color: rgba(247, 231, 199, 0.85);
+  font-size: 1.8cqw;
+  line-height: 1.5;
+}
+
+.nh-progress {
+  margin: 1.8cqw 0 0;
+  color: rgba(247, 231, 199, 0.6);
+  font-size: 1.5cqw;
+}
+
+/* ------------------------------------------------------------ stage select */
+
+.nh-levels {
+  background:
+    radial-gradient(circle at 20% 80%, rgba(224, 86, 47, 0.3), transparent 55%),
+    rgba(18, 8, 3, 0.82);
+}
+
+.nh-levels-panel {
+  width: min(86cqw, 640px);
+  max-height: 92cqh;
+  overflow: auto;
+  padding: 3cqw;
+  border-radius: 2cqw;
+  border: 1px solid var(--nh-line);
+  background: var(--nh-panel);
+  text-align: center;
+}
+
+.nh-levels-panel h2 {
+  margin: 0 0 2cqw;
+  color: var(--nh-gold);
+  font-size: 4.6cqw;
+  letter-spacing: 0.03em;
+  text-shadow: 0 0.4cqw 0 #8d3526;
+}
+
+.nh-level-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1cqw;
+}
+
+.nh-level {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35cqw;
+  min-height: 10cqw;
+  padding: 1.2cqw;
+  border-radius: 1.4cqw;
+  border: 1px solid rgba(255, 212, 71, 0.22);
+  background: linear-gradient(160deg, #3a2110, #241208);
+  color: var(--nh-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+
+.nh-level:hover:not(:disabled) {
+  border-color: var(--nh-gold);
+  transform: translateY(-1px);
+}
+
+.nh-level-number {
+  color: var(--nh-gold);
+  font-size: 3.4cqw;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.nh-level-name {
+  font-size: 1.6cqw;
+  font-weight: 700;
+}
+
+.nh-level-blurb {
+  color: rgba(247, 231, 199, 0.62);
+  font-size: 1.25cqw;
+  line-height: 1.35;
+}
+
+.nh-level.is-locked {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.nh-level.is-locked .nh-level-number {
+  color: #a89a86;
+}
+
+.nh-level.is-survival {
+  grid-column: span 2;
+  background: linear-gradient(160deg, #5b2a17, #2a130a);
+  border-color: rgba(255, 120, 60, 0.5);
+}
+
+.nh-lock {
+  position: absolute;
+  top: 1cqw;
+  right: 1cqw;
+  width: 2.2cqw;
+  height: 2.2cqw;
+}
+
+.nh-lock svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #c9b99e;
+  stroke-width: 2;
+}
+
+.nh-back {
+  margin-top: 2.4cqw;
+}
+
+/* --------------------------------------------------------------------- hud */
+
+.nh-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1cqw;
+  padding: 1.3cqw 1.6cqw;
+  background: linear-gradient(rgba(20, 9, 4, 0.78), rgba(20, 9, 4, 0));
+  pointer-events: none;
+}
+
+.nh-hud-group {
+  display: flex;
+  align-items: center;
+  gap: 0.8cqw;
+}
+
+.nh-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.6cqw;
+  padding: 0.55cqw 0.9cqw;
+  border: 1px solid var(--nh-line);
+  border-radius: 1.4cqw;
+  background: rgba(30, 15, 7, 0.86);
+  font-size: 2.1cqw;
+  font-weight: 700;
+}
+
+.nh-stat svg {
+  width: 2.2cqw;
+  height: 2.2cqw;
+}
+
+.nh-hp svg {
+  fill: #ff6b5b;
+}
+
+.nh-money svg {
+  fill: var(--nh-gold);
+  stroke: #8a5c00;
+  stroke-width: 1;
+}
+
+.nh-hp-track {
+  width: 9cqw;
+  height: 1.1cqw;
+  overflow: hidden;
+  border-radius: 1cqw;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.nh-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7dc95a, #c6e86a);
+  transition: width 0.16s ease;
+}
+
+.nh-hud-middle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2cqw;
+  padding-top: 0.2cqw;
+  text-align: center;
+}
+
+.nh-stage-label {
+  color: var(--nh-gold);
+  font-size: 1.9cqw;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0.2cqw 0 rgba(0, 0, 0, 0.6);
+}
+
+.nh-wave {
+  color: rgba(247, 231, 199, 0.72);
+  font-size: 1.4cqw;
+}
+
+.nh-leaf-hint {
+  color: #b7e26b;
+  font-size: 1.3cqw;
+}
+
+.nh-hud-buttons {
+  display: flex;
+  gap: 0.6cqw;
+  pointer-events: auto;
+}
+
+.nh-icon-btn {
+  width: 3.4cqw;
+  height: 3.4cqw;
+  border: 1px solid var(--nh-line);
+  border-radius: 1cqw;
+  background: rgba(30, 15, 7, 0.86);
+  color: var(--nh-ink);
+  font: inherit;
+  font-size: 1.6cqw;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nh-icon-btn:hover {
+  border-color: var(--nh-gold);
+}
+
+/* ------------------------------------------------------------------- cards */
+
+.nh-cards {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 7;
+  display: flex;
+  gap: 0.5cqw;
+  padding: 0.8cqw 0.8cqw 1cqw;
+  background: linear-gradient(
+    rgba(20, 9, 4, 0) 0%,
+    rgba(20, 9, 4, 0.78) 32%,
+    rgba(20, 9, 4, 0.95) 100%
+  );
+}
+
+.nh-card {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15cqw;
+  padding: 0.7cqw 0.35cqw 0.6cqw;
+  border: 1px solid rgba(255, 212, 71, 0.2);
+  border-radius: 1.2cqw;
+  background: rgba(44, 26, 15, 0.92);
+  color: var(--nh-ink);
+  font: inherit;
+  font-size: 1.4cqw;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.nh-card.is-ready {
+  border-color: rgba(255, 212, 71, 0.7);
+  background: rgba(64, 36, 18, 0.95);
+}
+
+.nh-card.is-ready:hover {
+  background: rgba(84, 46, 22, 0.98);
+}
+
+.nh-card.is-poor {
+  opacity: 0.7;
+}
+
+.nh-card.is-out {
+  border-color: rgba(125, 201, 90, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(125, 201, 90, 0.25);
+}
+
+.nh-card.is-max {
+  border-color: var(--nh-gold);
+  background: linear-gradient(160deg, #5b3a12, #2c1a0f);
+}
+
+.nh-card.is-blocked {
+  opacity: 0.45;
+}
+
+.nh-card:disabled {
+  cursor: not-allowed;
+}
+
+.nh-card-key {
+  position: absolute;
+  top: 0.35cqw;
+  left: 0.5cqw;
+  color: rgba(247, 231, 199, 0.4);
+  font-size: 1.05cqw;
+}
+
+.nh-card-name {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 1.55cqw;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.nh-card-role {
+  overflow: hidden;
+  max-width: 100%;
+  color: rgba(247, 231, 199, 0.58);
+  font-size: 1.15cqw;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.nh-card-stars {
+  display: flex;
+  gap: 0.22cqw;
+  margin-top: 0.15cqw;
+}
+
+.nh-card-stars i {
+  width: 0.55cqw;
+  height: 0.55cqw;
+  border-radius: 50%;
+  background: rgba(255, 212, 71, 0.18);
+}
+
+.nh-card-stars i.on {
+  background: var(--nh-gold);
+  box-shadow: 0 0 0.4cqw rgba(255, 212, 71, 0.55);
+}
+
+.nh-card-cost {
+  color: var(--nh-gold);
+  font-size: 1.5cqw;
+  font-weight: 700;
+}
+
+.nh-card.is-out .nh-card-cost {
+  color: #c6e86a;
+}
+
+.nh-help h2 {
+  text-align: center;
+}
+
+/* ----------------------------------------------------------------- results */
+
+.nh-result.is-won h2 {
+  color: #c6e86a;
+  text-shadow: 0 0.35cqw 0 #2f5a1c;
+}
+
+.nh-result.is-lost h2 {
+  color: #ff9d76;
+  text-shadow: 0 0.35cqw 0 #6d2412;
+}
+
+.nh-unlock {
+  display: inline-block;
+  margin: 0.4cqw 0 1.2cqw;
+  padding: 0.5cqw 1.3cqw;
+  border-radius: 1cqw;
+  background: rgba(125, 201, 90, 0.18);
+  color: #c6e86a;
+  font-size: 1.5cqw;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nh-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8cqw;
+  margin: 1.8cqw 0 2cqw;
+}
+
+.nh-stats div {
+  padding: 0.8cqw;
+  border-radius: 1cqw;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.nh-stats dt {
+  color: rgba(247, 231, 199, 0.55);
+  font-size: 1.3cqw;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nh-stats dd {
+  margin: 0.2cqw 0 0;
+  color: var(--nh-gold);
+  font-size: 2.4cqw;
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------------------- help */
+
+.nh-help {
+  width: min(88cqw, 700px);
+  text-align: left;
+}
+
+.nh-list {
+  margin: 0 0 1cqw;
+  padding-left: 2.2cqw;
+  color: rgba(247, 231, 199, 0.86);
+  font-size: 1.55cqw;
+  line-height: 1.55;
+}
+
+.nh-list li {
+  margin-bottom: 0.7cqw;
+}
+
+.nh-help-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8cqw;
+}
+
+.nh-help-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2cqw;
+  padding: 0.9cqw;
+  border-radius: 1cqw;
+  border: 1px solid rgba(255, 212, 71, 0.14);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 1.25cqw;
+  line-height: 1.35;
+}
+
+.nh-help-card strong {
+  color: var(--nh-gold);
+  font-size: 1.55cqw;
+}
+
+div.nh-help-card span {
+  color: rgba(247, 231, 199, 0.7);
+}
+
+.nh-help .nh-btn {
+  display: block;
+  margin: 2cqw auto 0;
+}
+
+.nh-help .nh-muted {
+  margin-top: 1.6cqw;
+}
+
+/* -------------------------------------------------------------- small view */
+
+@media (max-width: 720px) {
+  .nh-title-card {
+    max-width: 74cqw;
+  }
+
+  .nh-title h1 {
+    font-size: 9cqw;
+  }
+
+  .nh-level-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .nh-level {
+    min-height: 13cqw;
+  }
+
+  .nh-level-number {
+    font-size: 4.2cqw;
+  }
+
+  .nh-level-name {
+    font-size: 2.1cqw;
+  }
+
+  .nh-level-blurb {
+    font-size: 1.6cqw;
+  }
+
+  .nh-cards {
+    flex-wrap: wrap;
+  }
+
+  .nh-card {
+    flex: 1 1 calc(33.333% - 0.6cqw);
+    font-size: 2.2cqw;
+    padding: 1.2cqw 0.6cqw 1cqw;
+  }
+
+  .nh-card-name {
+    font-size: 2.3cqw;
+  }
+
+  .nh-card-role {
+    font-size: 1.7cqw;
+  }
+
+  .nh-card-cost {
+    font-size: 2.1cqw;
+  }
+
+  .nh-card-key {
+    display: none;
+  }
+
+  .nh-card-stars i {
+    width: 0.9cqw;
+    height: 0.9cqw;
+  }
+
+  .nh-stat {
+    font-size: 2.8cqw;
+  }
+
+  .nh-hp-track {
+    width: 12cqw;
+    height: 1.5cqw;
+  }
+
+  .nh-stage-label {
+    font-size: 2.4cqw;
+  }
+
+  .nh-wave,
+  .nh-leaf-hint {
+    font-size: 1.8cqw;
+  }
+
+  .nh-hud-middle {
+    display: none;
+  }
+
+  .nh-help-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .nh-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .nh-btn {
+    font-size: 2.4cqw;
+    padding: 1.8cqw 3cqw;
+  }
+}
+
+@media (max-height: 520px) {
+  .nh-card-role,
+  .nh-card-stars {
+    display: none;
+  }
+}
+
+/* The stage itself is narrow on a portrait phone: keep all six cards on one
+   compact row so the board stays visible. */
+@container (max-width: 520px) {
+  .nh-cards {
+    flex-wrap: nowrap;
+    gap: 0.4cqw;
+    padding: 0.6cqw 0.6cqw 0.8cqw;
+  }
+
+  .nh-card {
+    flex: 1 1 0;
+    gap: 0;
+    padding: 0.7cqw 0.2cqw 0.6cqw;
+  }
+
+  .nh-card-name {
+    font-size: 1.9cqw;
+    line-height: 1.05;
+    text-align: center;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
+  .nh-card-role,
+  .nh-card-stars,
+  .nh-card-key {
+    display: none;
+  }
+
+  .nh-card-cost {
+    margin-top: 0.3cqw;
+    font-size: 2cqw;
+  }
+}

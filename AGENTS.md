@@ -148,6 +148,7 @@ that line too (and vice versa).
 | Gold Miner | v1: single-player complete; multiplayer not started       | `games/gold-miner/DESIGN.md` |
 | Billiards  | Single-player complete; two-player not started            | `games/billiards/DESIGN.md`  |
 | Bomb It 3  | Four modes and local two-player; fidelity gaps documented | `games/bomb-it-3/DESIGN.md`  |
+| Nail House | v1: seven stages, six-card shop, endless stage 7 complete | `games/nail-house/DESIGN.md` |
 
 ### Bomb It 3 source organization
 
@@ -226,6 +227,27 @@ dragging the bar remains available. Cancellation must disarm release on pause,
 focus loss, pointer interruption, or game end. Keep charge ownership explicit so
 keyboard and pointer inputs cannot fire each other's shots. Physics receives cue
 speed, not charge timing.
+
+### Nail House source organization
+
+`games/nail-house/` is a standalone Canvas 2D + React tower-defence game
+recreated from the decompiled Flash original. The SWF and extracted Flash assets
+are research inputs only and must not be included in published builds. Read
+`DESIGN.md` and `CALIBRATION.md` before changing gameplay or fidelity claims.
+
+- `src/game/`: deterministic 30 Hz simulation, decompiled catalog and tuning,
+  wave tables, seeded RNG, and tests; no browser or React imports.
+- `src/rendering/`: original Canvas art for the skyline, pit, house, family,
+  crew, weapons, and effects; read-only state access.
+- `src/runtime/`: session actions, guarded local storage, and Web Audio.
+- `src/ui/`: React menus, HUD, card bar, overlays, Canvas host, and CSS.
+- `src/main.tsx`: the browser entry point.
+
+Rendering owns animation frames; React updates on transitions and once per
+second. Cards deploy into the four window slots, and only one copy of each
+family member can be out. The shop charges `$100` to deploy and
+`$200/$250/$350/$400` for levels 2–5. Stage 7 is endless survival. Progress and
+mute live in `localStorage` under `nail-house:unlocked` and `nail-house:muted`.
 
 ## Coding standard
 
