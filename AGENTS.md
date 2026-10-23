@@ -27,7 +27,9 @@ decision, not a gap.
 - [Deno](https://deno.com) 2.9+ is the runtime, package manager, and toolchain.
   npm packages are declared in `deno.json` (`nodeModulesDir: "auto"` creates
   `node_modules/` for Vite and Wrangler); there is no `package.json`. Node is
-  only used to run Wrangler.
+  only used to run Wrangler. The root `deno.json` is a workspace: every game
+  with its own `deno.json` is listed in `"workspace"`, so root `deno check`,
+  `deno test`, and `deno fmt` cover it.
 - **Vite** builds the platform's browser code and runs the dev server. In dev,
   `platform/dev.ts` (a Vite plugin) sends platform routes through the same
   `createHandler` as production, and serves games from their published folders.
@@ -74,6 +76,8 @@ platform/
   styles.css       platform styles
   app_test.tsx     routing tests with fake files
 games/<slug>/      one independent game per folder
+  deno.json        the game's own tasks (dev, build) and dependencies
+  src/             game source; dist/ is its build (gitignored)
 scripts/
   build_games.ts   publishes games to dist/games/<slug>/
 docs/
@@ -92,6 +96,8 @@ biome.json         Biome linter config
 
 ```sh
 deno task dev     # Vite dev server on http://localhost:8000, with hot reload
+                  # (games show from their last build: run `deno task build`)
+deno task --cwd games/<slug> dev   # one game on its own, with hot reload
 deno task build   # platform assets + published games into dist/
 deno task start   # serve dist/ with the Deno server (build first)
 deno task test    # tests
@@ -113,7 +119,9 @@ that line too (and vice versa).
      dotfiles, and `node_modules`), or
    - a `build` task in its own `deno.json` (or a `build` script in its
      `package.json`) that writes a static build with an `index.html` to
-     `games/<slug>/dist/`.
+     `games/<slug>/dist/`. Add a game with a `deno.json` to `"workspace"` in the
+     root `deno.json`. `games/gold-miner/` is the example to copy: Vite with
+     `base: "./"` so its asset URLs stay relative.
 
 - The platform shows "Coming soon" for a game until its build has an
   `index.html`, then marks it playable. Nothing else to toggle.
@@ -132,9 +140,9 @@ that line too (and vice versa).
 
 ## Games
 
-| Game       | Status              | Design                       |
-| ---------- | ------------------- | ---------------------------- |
-| Gold Miner | Designed, not built | `games/gold-miner/DESIGN.md` |
+| Game       | Status                                              | Design                       |
+| ---------- | --------------------------------------------------- | ---------------------------- |
+| Gold Miner | v1: single-player complete; multiplayer not started | `games/gold-miner/DESIGN.md` |
 
 ## Coding standard
 
