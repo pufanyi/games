@@ -171,7 +171,7 @@ seed and shots must replay identically.
 - [x] The cue's direction is passed as a vector, so the trig that turns a mouse
       angle into it happens in the input code, outside the simulation
 - [x] The seeded RNG lives in the state, never `Math.random()`
-- [ ] Ball orientation (for drawing numbers and stripes rolling) is integrated
+- [x] Ball orientation (for drawing numbers and stripes rolling) is integrated
       by the renderer from the recorded angular velocity, so it isn't part of
       the simulated state and can use trig
 
@@ -243,24 +243,40 @@ judge(state: GameState, result: ShotResult): Outcome;
 
 ## Rendering
 
-Top-down 2D on a canvas (decided; 3D with three.js was the alternative).
+Three.js renders the table in 3D (decided). The deterministic physics remains
+plain TypeScript and does not depend on Three.js.
 
-- [x] Balls show rolling: each is shaded pixel by pixel from its orientation
-      (integrated from the recorded spin), so numbers, stripes and the cue
-      ball's red spots turn as it rolls and spins. They have shadows
-- [ ] The physics doesn't depend on the choice, so a 3D view could come later
+- [x] Perspective table view and an orthographic top view, switchable without
+      changing aim or game state
+- [x] Three-dimensional cloth, wooden rails, cushion noses, pockets, legs, and a
+      tapered cue with ferrule and chalked tip
+- [x] Ball meshes with original procedural numbered/striped textures, physically
+      based materials, shadows, and generated environment reflections
+- [x] Ball orientation follows recorded angular velocity; pocketed balls animate
+      downward without affecting the physics result
+- [x] Ray-to-plane pointer picking in both views, using the ball-center plane;
+      mouse and touch coordinates stay correct when the stage scales
+- [x] Shared table geometry: rendered cushion noses use the physical segments,
+      and cloth cutouts use the physical pocket circles
+- [x] Responsive drawing buffer capped at 2× device pixel ratio; GPU resources
+      are disposed when the component unmounts
+- [x] Graphics context loss pauses the game. Restoration rebuilds rendering
+      resources; an unavailable 3D context shows a retry screen
+
+Textures and models are generated locally, with no remote assets. Three.js is
+pinned in this game's `deno.json`; its MIT license is bundled under
+`public/licenses/three.txt` and copied into the published build.
 
 ## Technical
 
 - [x] A standalone TypeScript app built with Vite: its own `deno.json` with a
       `build` task writing to `games/billiards/dist/` (see `AGENTS.md`)
-- [x] Physics, rules and game flow in plain TS; drawing on a canvas; menus and
-      HUD as React components that only re-render when what they show changes
-      (never every frame)
-- [x] Fixed internal resolution, 1280 × 720 (a 2:1 table plus room for the HUD
-      and side controls), scaled to fit; fills its window, since it runs in the
-      platform's iframe and must also work opened directly at
-      `/games/billiards/`
+- [x] Physics, rules and game flow in plain TS; Three.js draws the WebGL canvas;
+      menus and HUD as React components that only re-render when what they show
+      changes (never every frame)
+- [x] A 16:9 stage with a 1280 × 720 reference layout and a responsive WebGL
+      drawing buffer; fills its window, since it runs in the platform's iframe
+      and must also work opened directly at `/games/billiards/`
 - [x] Playback uses `requestAnimationFrame`, interpolating between recorded
       frames by real time, so it looks the same at any frame rate
 
@@ -271,8 +287,9 @@ games/billiards/src/
   game.ts       game state and turn flow (place → aim → shot → playback → judge)
   aim.ts        the aim guide
   session.ts    screens, pause, the shot being lined up, best time
-  layout.ts     canvas size and table ↔ canvas coordinates
-  render.ts     canvas drawing; balls.ts paints the rolling balls
+  layout.ts     reference stage size
+  rendering/    Three.js renderer, cameras, table, balls, cue, guide, textures
+                camera projection tests and visual quaternion integration
   screens.tsx   React screens, HUD, spin and power controls
   Billiards.tsx the component: loop, pointer and keyboard input
   audio.ts, storage.ts, style.css, main.tsx

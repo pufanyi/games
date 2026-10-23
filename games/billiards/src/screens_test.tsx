@@ -15,6 +15,7 @@ function view(overrides: Partial<View> = {}): View {
     ballInHand: false,
     seconds: 83,
     ballsLeft: 4,
+    potted: [],
     shots: 12,
     fouls: 1,
     foul: null,

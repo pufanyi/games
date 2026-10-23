@@ -1,7 +1,7 @@
 /* The game fills its window (the platform's iframe, or a tab of its own) and
    letterboxes the 16:9 stage in it. Everything inside the stage scales with
-   the stage via container query units, matching the canvas, which is laid out
-   on a 1280 × 720 grid (layout.ts): an 80px column each side of the table and
+   the stage via container query units, matching the WebGL canvas and its 1280 × 720 reference layout:
+   an 80px column each side of the table and
    the HUD above it. The look is a pool hall: felt, dark wood, and brass. */
 
 :root {
@@ -407,4 +407,48 @@ kbd {
   .panel {
     animation: none;
   }
+}
+
+.camera-control {
+  position: absolute;
+  left: 8%;
+  bottom: 2%;
+}
+
+.ball-tray {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.35cqw;
+  pointer-events: none;
+}
+
+.tray-ball {
+  display: grid;
+  place-items: center;
+  width: 1.8cqw;
+  height: 1.8cqw;
+  border-radius: 50%;
+  opacity: 0.24;
+  box-shadow: inset -0.15cqw -0.2cqw 0.4cqw rgb(0 0 0 / 0.4);
+}
+
+.tray-ball.potted {
+  opacity: 1;
+}
+.tray-ball.striped {
+  background-image: linear-gradient(#efece0 20%, transparent 20%, transparent
+    80%, #efece0 80%);
+}
+.tray-ball span {
+  display: grid;
+  place-items: center;
+  width: 1.05cqw;
+  height: 1.05cqw;
+  border-radius: 50%;
+  color: #17191c;
+  background: #f5f1e5;
+  font: bold 0.75cqw Arial, sans-serif;
 }
