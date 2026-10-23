@@ -57,6 +57,7 @@ export interface View {
   /** Whole seconds, rounded up, so the view changes once a second. */
   seconds: number;
   ballsLeft: number;
+  potted: number[];
   shots: number;
   fouls: number;
   foul: Foul | null;
@@ -100,6 +101,9 @@ export function viewOf(s: Session): View {
     ballInHand: game.ballInHand,
     seconds: Math.ceil(game.timeLeft),
     ballsLeft: objectBallsLeft(game),
+    potted: game.balls.filter((b) => b.id > 0 && b.motion === "pocketed").map((
+      b,
+    ) => b.id),
     shots: game.shots,
     fouls: game.fouls,
     foul: game.foul,

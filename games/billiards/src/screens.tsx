@@ -8,6 +8,7 @@ import {
   useEffect,
   useRef,
 } from "react";
+import { ballColor } from "./rendering/colors.ts";
 import { MISCUE_LIMIT } from "./physics/constants.ts";
 import { FOUL_PENALTY, TIME_LIMIT } from "./rules/timed.ts";
 import { MAX_ELEVATION, type View } from "./session.ts";
@@ -359,6 +360,33 @@ export function PowerBar({
           ↻
         </button>
       </div>
+    </div>
+  );
+}
+
+/** DOM status stays sharp and accessible independently of the camera. */
+export function BallTray({ potted }: { potted: number[] }) {
+  return (
+    <div
+      className="ball-tray"
+      role="img"
+      aria-label={`Potted balls: ${potted.join(", ") || "none"}`}
+    >
+      {Array.from({ length: 15 }, (_, i) => i + 1).map((id) => (
+        <span
+          key={id}
+          role="img"
+          className={`tray-ball${potted.includes(id) ? " potted" : ""}${
+            id > 8 ? " striped" : ""
+          }`}
+          style={{ backgroundColor: ballColor(id) }}
+          aria-label={`Ball ${id}: ${
+            potted.includes(id) ? "potted" : "on table"
+          }`}
+        >
+          <span>{id}</span>
+        </span>
+      ))}
     </div>
   );
 }

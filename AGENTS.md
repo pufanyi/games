@@ -162,6 +162,20 @@ Tests live beside their modules. See `games/gold-miner/CALIBRATION.md` for
 historical evidence, approximate tuning, and outstanding fidelity gaps. Do not
 present estimates as measured original-game constants.
 
+### Billiards rendering
+
+`games/billiards/src/rendering/` owns the Three.js WebGL renderer, camera
+projection and picking, table/ball/cue meshes, guides, and procedural textures.
+`physics/` and `rules/` remain independent of Three.js and the browser. React
+owns menus and controls; it does not render each animation frame. The default
+perspective view and optional top view share the same physics coordinates (x/y
+on the table, z up). Pointer input uses camera rays at ball-center height.
+
+Three.js and its types are pinned in the game's `deno.json`. Generated textures
+need no external assets; `public/licenses/three.txt` ships the Three.js MIT
+notice. Dispose GPU resources on unmount and rebuild generated render targets
+after graphics-context restoration.
+
 ## Coding standard
 
 ### Platform (`platform/`)

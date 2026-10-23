@@ -2,10 +2,11 @@
 // overlays that re-render only when their `View` changes.
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { unlock } from "./audio.ts";
-import { HEIGHT, toTable, WIDTH } from "./layout.ts";
+import { HEIGHT, WIDTH } from "./layout.ts";
 import { BALL_RADIUS as R } from "./physics/constants.ts";
-import { Renderer } from "./render.ts";
+import { Renderer } from "./rendering/renderer.ts";
 import {
+  BallTray,
   Hud,
   PauseScreen,
   PowerBar,
@@ -41,6 +42,18 @@ const DEGREE = Math.PI / 180;
 
 export function Billiards() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rendererRef = useRef<Renderer | null>(null);
+  const [cameraView, setCameraView] = useState<"table" | "top">("table");
+  const cameraViewRef = useRef<"table" | "top">("table");
+  const [renderError, setRenderError] = useState(false);
+  const [renderAttempt, setRenderAttempt] = useState(0);
+
+  function switchCamera() {
+    const next = cameraViewRef.current === "table" ? "top" : "table";
+    cameraViewRef.current = next;
+    rendererRef.current?.setView(next);
+    setCameraView(next);
+  }
   const sessionRef = useRef<Session | null>(null);
   sessionRef.current ??= createSession();
   const session = sessionRef.current;
@@ -58,29 +71,52 @@ export function Billiards() {
   // The loop: real time drives the clock and shot playback.
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-    // Draw at device resolution so the canvas stays sharp on high-DPI screens.
-    const scale = Math.min(globalThis.devicePixelRatio || 1, 2);
-    canvas.width = WIDTH * scale;
-    canvas.height = HEIGHT * scale;
-    ctx.scale(scale, scale);
-    const renderer = new Renderer(ctx, scale);
+    if (!canvas) return;
+    let renderer: Renderer;
+    try {
+      renderer = new Renderer(canvas);
+      renderer.setView(cameraViewRef.current);
+      rendererRef.current = renderer;
+      setRenderError(false);
+    } catch {
+      setRenderError(true);
+      setPaused(session, true);
+      return;
+    }
+    const onLost = (event: Event) => {
+      event.preventDefault();
+      setPaused(session, true);
+      setRenderError(true);
+    };
+    // Rebuild generated reflection targets after the GPU has lost their contents.
+    const onRestored = () => setRenderAttempt((n) => n + 1);
+    canvas.addEventListener("webglcontextlost", onLost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
 
     let frameId = 0;
     let last = performance.now();
+    let displayed = viewOf(session);
     const frame = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
       update(session, dt);
       renderer.draw(session, isActive(session) ? dt : 0);
       const next = viewOf(session);
-      setView((current) => (sameView(current, next) ? current : next));
+      if (!sameView(displayed, next)) {
+        displayed = next;
+        setView(next);
+      }
       frameId = requestAnimationFrame(frame);
     };
     frameId = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(frameId);
-  }, [session]);
+    return () => {
+      cancelAnimationFrame(frameId);
+      canvas.removeEventListener("webglcontextlost", onLost);
+      canvas.removeEventListener("webglcontextrestored", onRestored);
+      rendererRef.current = null;
+      renderer.dispose();
+    };
+  }, [session, renderAttempt]);
 
   // Keyboard, and pausing when the tab is hidden.
   useEffect(() => {
@@ -186,19 +222,23 @@ export function Billiards() {
   }, [session]);
 
   /** The pointer's position on the table, in meters. */
-  function pointer(event: PointerEvent<HTMLCanvasElement>): [number, number] {
+  function pointer(
+    event: PointerEvent<HTMLCanvasElement>,
+  ): [number, number] | null {
     const rect = event.currentTarget.getBoundingClientRect();
-    return toTable(
-      ((event.clientX - rect.left) / rect.width) * WIDTH,
-      ((event.clientY - rect.top) / rect.height) * HEIGHT,
-    );
+    return rendererRef.current?.camera.toTable(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      1 - ((event.clientY - rect.top) / rect.height) * 2,
+    ) ?? null;
   }
 
   const onPointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
     unlock();
     if (!isActive(session)) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    const [x, y] = pointer(event);
+    const point = pointer(event);
+    if (!point) return;
+    const [x, y] = point;
     const { game } = session;
     const cue = game.balls[0];
     if (
@@ -217,7 +257,9 @@ export function Billiards() {
     // A mouse aims just by hovering; touch and pen while pressed.
     const pressed = event.currentTarget.hasPointerCapture(event.pointerId);
     if (!pressed && event.pointerType !== "mouse") return;
-    const [x, y] = pointer(event);
+    const point = pointer(event);
+    if (!point) return;
+    const [x, y] = point;
     if (session.game.phase === "placing") moveCue(session, x, y);
     else if (session.game.phase === "aiming") aimAt(session, x, y);
   };
@@ -261,6 +303,7 @@ export function Billiards() {
       />
       {view.mode === "game" && (
         <>
+          <BallTray potted={view.potted} />
           <Hud
             view={view}
             onPause={act((s) => setPaused(s, !s.paused))}
@@ -284,7 +327,37 @@ export function Billiards() {
           />
         </>
       )}
+      <button
+        type="button"
+        className="control camera-control"
+        onClick={(event) => {
+          switchCamera();
+          event.currentTarget.blur();
+        }}
+        aria-label="Switch camera view"
+        aria-pressed={cameraView === "top"}
+      >
+        {cameraView === "top" ? "3D view" : "Top view"}
+      </button>
       {screen}
+      {renderError && (
+        <div className="overlay">
+          <div className="panel" role="alert">
+            <h2>3D view unavailable</h2>
+            <p>
+              The game needs browser 3D graphics support. Check hardware
+              acceleration, then try again.
+            </p>
+            <button
+              type="button"
+              className="button primary"
+              onClick={() => setRenderAttempt((n) => n + 1)}
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
