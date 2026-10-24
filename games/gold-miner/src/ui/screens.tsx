@@ -98,10 +98,9 @@ export function PauseScreen(
 }
 
 /**
- * The general store between levels: the storekeeper behind his counter and the
- * day's goods standing on it with price tags. Slots that are out of stock have
- * no goods and no button, as in the original panel. The price is never checked
- * against the purse: buying can take the money total negative.
+ * The general store between levels: the storekeeper behind his counter, the
+ * day's goods standing on it with price tags. Pointing at or focusing an item
+ * has him describe it; clicking buys it.
  */
 export function ShopScreen({
   view,
@@ -125,7 +124,11 @@ export function ShopScreen({
   } else if (talk) {
     const offer = view.offers.find((o) => o.item === talk.item);
     const info = SHOP_ITEMS[talk.item];
-    const note = offer?.sold ? " You've already got one." : "";
+    let note = "";
+    if (offer?.sold) note = " You've already got one.";
+    else if (offer && offer.price > view.money) {
+      note = ` You're $${offer.price - view.money} short.`;
+    }
     speech = (
       <>
         <strong>{info.label}:</strong> {info.description}
@@ -152,20 +155,20 @@ export function ShopScreen({
         <div className="counter" onPointerLeave={() => setTalk(null)}>
           {view.offers.map((offer) => {
             const info = SHOP_ITEMS[offer.item];
-            if (!offer.available) {
-              // The original leaves an empty spot where a slot is out of stock.
-              return <span key={offer.item} className="offer empty" />;
-            }
+            const short = !offer.sold && view.money < offer.price;
+            // aria-disabled rather than disabled, so the storekeeper can
+            // still describe what you can't buy.
             return (
               <button
                 key={offer.item}
                 type="button"
                 className="offer"
-                aria-disabled={offer.sold}
+                aria-disabled={offer.sold || short}
+                data-short={short || undefined}
                 onPointerEnter={about(offer.item)}
                 onFocus={about(offer.item)}
                 onClick={() => {
-                  if (offer.sold) return;
+                  if (offer.sold || short) return;
                   onBuy(offer.item);
                   setTalk({ item: offer.item, bought: true });
                 }}
@@ -184,8 +187,8 @@ export function ShopScreen({
         </div>
       </div>
       <p className="shop-note">
-        {`The next goal is $${view.nextGoal}. ` +
-          "Spending here adds to what you must earn next level."}
+        {`The next goal is $${view.nextGoal}; ` +
+          "spending money here makes it harder to reach."}
       </p>
       <button
         type="button"
@@ -258,10 +261,10 @@ export function Controls({
       <button
         type="button"
         className="control"
-        disabled={!playing || !view.canDynamite}
+        disabled={!playing || view.dynamite === 0}
         onClick={press(onDynamite)}
       >
-        Dynamite <span className="count">{view.sticks}</span>
+        Dynamite <span className="count">{view.dynamite}</span>
       </button>
       <button
         type="button"

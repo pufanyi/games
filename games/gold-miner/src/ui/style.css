@@ -1,4 +1,4 @@
-/* The game fills its window (the platform opens it directly in a tab) and
+/* The game fills its window (the platform's iframe, or a tab of its own) and
    letterboxes the 4:3 stage in it. Everything inside the stage scales with the
    stage via container query units. The look matches the canvas: ink
    outlines, wood, parchment, and gold. */
@@ -418,9 +418,8 @@ kbd {
   height: 100%;
 }
 
-/* A slot with no stock: the spot stays empty, as in the original counter. */
-.offer.empty {
-  visibility: hidden;
+.offer[data-short] .offer-art {
+  filter: grayscale(0.6) opacity(0.65);
 }
 
 .offer:hover:not([aria-disabled="true"]) .offer-art,
@@ -499,6 +498,10 @@ kbd {
   font-family: var(--display);
   font-size: 1.3em;
   color: #2e7d32;
+}
+
+.offer[data-short] .offer-price {
+  color: #c62828;
 }
 
 .shop-note {

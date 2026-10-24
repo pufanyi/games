@@ -36,9 +36,7 @@ export interface View {
   money: number;
   goal: number;
   nextGoal: number;
-  sticks: number;
-  /** Up only works while the claw is reeling something in. */
-  canDynamite: boolean;
+  dynamite: number;
   offers: Offer[];
   best: Best | null;
   newBest: boolean;
@@ -73,9 +71,7 @@ export function viewOf(s: Session): View {
     money: game.money,
     goal: game.goal,
     nextGoal: goalFor(game.level + 1),
-    sticks: game.sticks,
-    canDynamite: game.sticks > 0 &&
-      game.players[0]?.claw.state === "retract",
+    dynamite: game.dynamite,
     offers: game.shop?.offers.map((offer) => ({ ...offer })) ?? [],
     best: s.best,
     newBest: s.newBest,

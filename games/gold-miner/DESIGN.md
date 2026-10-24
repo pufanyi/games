@@ -5,64 +5,55 @@ screen, fires it to grab gold and gems, and has to hit a money goal before time
 runs out. Check items off as they're built.
 
 **Status:** v1 is single-player and complete: everything above
-[Multiplayer](#multiplayer) is built. Rules, geometry, and timing follow values
-recovered from the original file (see [CALIBRATION.md](CALIBRATION.md)); art,
-sound, and text are new. Source is in `src/`; `deno task dev` here runs it on
-its own with hot reload.
+[Multiplayer](#multiplayer) is built. Source is in `src/`; `deno task dev` here
+runs it on its own with hot reload.
 
 ## Core loop
 
-- [x] The claw swings from about +67° to −68° and back on the original's
-      measured per-frame rotation table, looping over its 84 keys
-- [x] Firing extends the claw in a straight line at the current angle; the swing
-      keeps turning while the claw is out, as in the original
-- [x] On hitting an item, the rope snaps to the matching retract key frame and
-      reels back; the reel rate is `minerStrength - weight` clip frames per
-      frame, so heavy items crawl and empty shots return fast
-- [x] A miss returns empty once extension reaches its measured maximum
-- [x] Ignore input while the claw is out, except dynamite while reeling
+- [x] Claw swings like a pendulum, about ±70° from straight down, at a constant
+      angular speed
+- [x] Firing extends the claw in a straight line at the current angle
+- [x] On hitting an item, the claw grabs it and reels back; heavier items reel
+      back more slowly (roughly `baseSpeed / weight`)
+- [x] A miss returns empty when the claw reaches the edge of the screen
+- [x] Ignore input while the claw is out, except dynamite
 - [x] When the claw gets back, the item's value is added to the money total
-- [x] Each level has a 60-second timer and a money goal: meet it to go to the
-      shop, miss it and the game is over
-- [x] Items left when time runs out are lost; a cash payout still in progress
-      delays the end instead of cancelling it
+- [x] Each level has a timer (~60s) and a money goal: meet it to go to the shop,
+      miss it and the game is over
+- [x] Items left when time runs out are lost
 
 ## Items in the mine
 
-Values and weights are the original's object table; hit boxes and drawn sizes
-are its recovered sprite bounds. See [CALIBRATION.md](CALIBRATION.md) for how
-each number was read.
+Match the classic single-player game where historical evidence is available. See
+[CALIBRATION.md](CALIBRATION.md) for supported values, estimates, and remaining
+differences.
 
-| Item                              | Value  | Weight | Notes                                        |
-| --------------------------------- | ------ | ------ | -------------------------------------------- |
-| Gold (small, medium, large, huge) | 50–500 | 3–9    | Larger gold is worth more and hauls slower   |
-| Rock (small, large)               | 11, 20 | 8, 9   | Heavy for almost nothing                     |
-| Diamond                           | 600    | 2      | Rare; polish raises it to 900                |
-| Pig                               | 602    | 5      | Walks; polish raises it to 902               |
-| Mole                              | 2      | 3      | Walks; some carry a diamond                  |
-| Mystery bag                       | Rolled | 1–9/−1 | Money, temporary strength, or dynamite       |
-| Bone / skull                      | 7, 20  | 3, 2   | Clutter                                      |
-| TNT barrel                        | 1      | 2      | Explodes when grabbed, destroying neighbours |
+| Item                              | Value             | Weight              | Notes                                        |
+| --------------------------------- | ----------------- | ------------------- | -------------------------------------------- |
+| Gold (small, medium, large, huge) | 50, 100, 250, 500 | Light to very heavy | Large gold is the risky grab                 |
+| Rock (small, large)               | Very low          | Heavy               | Wastes time                                  |
+| Diamond                           | Very high         | Very light          | Rare                                         |
+| Mystery bag                       | Random            | Variable            | Money, a free dynamite, or a strength boost  |
+| Mole or pig                       | Low               | Light               | Walks back and forth; some carry a diamond   |
+| TNT barrel                        | 0                 | –                   | Explodes when grabbed, destroys nearby items |
+| Bone or skull                     | Very low          | Light               | Clutter                                      |
 
 ## Levels
 
-- [x] 30 fixed layouts, 10 themes × 3 variants, recovered from the original
-- [x] The money goal follows the original ladder from 650 upward
-- [x] Pigs and moles patrol their tunnel with measured walk speeds and pauses
-- [x] Bags, diamonds, rocks, and TNT are placed and rolled as in the original
+- [x] The money goal rises every level
+- [x] Levels are hand-designed or generated with a **seeded** RNG (same seed,
+      same mine), with no overlapping items and valuable items placed deeper
 
 ## Shop between levels
 
-Five fixed slots; an out-of-stock slot is simply empty, and stock and prices are
-rolled with the original's own rules:
+A random selection at random prices on each visit:
 
 - [x] **Dynamite**: use while reeling back to destroy what you're holding,
-      damage nearby items, and trigger nearby TNT; never stocked at five sticks
+      damage nearby items, and trigger nearby TNT
 - [x] **Strength drink**: reel back faster next level
-- [x] **Lucky clover**: better mystery bags (and more dynamite from them)
-- [x] **Rock collector's book**: rocks are worth three times as much
-- [x] **Diamond polish**: diamonds and pigs are worth 300 more
-- [x] Buying is never blocked by the money total, which can go negative
+- [x] **Lucky clover**: better mystery bags
+- [x] **Rock collector's book**: rocks are worth more
+- [x] **Diamond polish**: diamonds are worth more
 
 ## Controls
 
@@ -95,8 +86,8 @@ use the same `INK` outline). Keep new art consistent with it:
       canvases
 - [x] **Sprites** (`src/rendering/sprites.ts`): pitted gold with twinkles,
       chipped and cracked rocks, glowing cut diamonds, patched sacks, bones and
-      skulls, barrels of TNT with a lit fuse, and moles and pigs that trundle
-      along their tunnels; buried items sit in a darker pocket of dirt
+      skulls, barrels of TNT with a lit fuse, and moles that trundle along their
+      tunnels; buried items sit in a darker pocket of dirt
 - [x] **Camp** (`src/rendering/camp.ts`): a plank deck over the shaft, a rope
       reel on two trestles whose coil grows as the rope comes in, and an ore
       cart whose heap of gold grows toward the level's goal
@@ -118,33 +109,32 @@ use the same `INK` outline). Keep new art consistent with it:
       a diamond
 - [x] **Shop** (`src/ui/screens.tsx`, art in `src/ui/art.tsx`): a general store
       whose storekeeper (eyeshade, spectacles, handlebar mustache) stands behind
-      a counter. The goods stand on it in five fixed spots with paper price
-      tags: a bundle of dynamite, a strength tonic, a four-leaf clover, a rock
-      collector's book, and a jar of diamond polish. An out-of-stock spot stays
-      empty. Pointing at or focusing an item has him describe it in a speech
-      bubble; buying makes him grin and stamps the item Sold
+      a counter. The goods stand on it with paper price tags: a bundle of
+      dynamite, a strength tonic, a four-leaf clover, a rock collector's book,
+      and a jar of diamond polish. Pointing at or focusing one has him describe
+      it in a speech bubble (and say how much you're short); buying makes him
+      grin and stamps the item Sold
 - [x] **Font:** Lilita One (SIL Open Font License), bundled in `src/fonts/` with
       its license so the game works offline
 
 ## Technical
 
 - [x] Canvas 2D at a fixed internal resolution, scaled to fit the screen
-- [x] `requestAnimationFrame` for drawing over a **fixed-timestep** update at 60
-      ticks/s, advancing the original's 18 fps clip timelines by 0.3 frames per
-      tick, so motion is smooth and timing matches at any display rate
+- [x] `requestAnimationFrame` for drawing over a **fixed-timestep** update (e.g.
+      60 ticks/s), so the physics is the same at any frame rate
 - [x] A standalone TypeScript app built with Vite: its own `deno.json` with a
       `build` task writing to `games/gold-miner/dist/` (see `AGENTS.md`)
 - [x] Game logic and canvas drawing in plain TS; title, pause, shop, and
       game-over screens as React components over the canvas, which only
       re-render when what they show changes (never every frame)
-- [x] Fills its window and scales to it, since the platform opens it directly at
-      `/games/gold-miner/` in the current tab
+- [x] Fills its window and scales to it, since it runs in the platform's iframe
+      and must also work opened directly at `/games/gold-miner/`
 
 ### Source boundaries
 
-- `src/game/`: simulation, recovered original tables (`original.ts`), and the 30
-  fixed layouts (`layouts.ts`); tuning lives in `config.ts`, item denominations
-  and boxes in `items.ts`, and shop rules in `shop.ts`.
+- `src/game/`: simulation and seeded level generation; tuning lives in
+  `config.ts`, item denominations and weights in `items.ts`, shop rules in
+  `shop.ts`.
 - `src/rendering/`: Canvas-only presentation.
 - `src/runtime/`: browser session, audio, and persistence.
 - `src/ui/`: React overlays, input/Canvas host, and styles.
@@ -159,7 +149,7 @@ multiplayer a matter of where the inputs come from.
 // src/game/sim.ts — no DOM, no canvas, no Date.now(), no Math.random()
 export function createGame(seed: number): GameState; // plain, JSON-serializable
 export function step(state: GameState, inputs: Input[]): void; // one fixed tick
-// inputs: [{ player: 0, action: "fire" | "dynamite" | "buy" | "continue" }]
+// inputs: [{ player: 0, action: "fire" | "dynamite" }]
 ```
 
 - `step` depends only on `state` and `inputs`
