@@ -1,5 +1,3 @@
-// Stage picker. Stages are numbered rather than named: the original game's
-// locale files are not part of the SWF, so the data has no stage titles.
 import { LEVELS } from "../content/levels.ts";
 import type { GameMode } from "../game/types.ts";
 import { countWaveGroups } from "../game/waves.ts";

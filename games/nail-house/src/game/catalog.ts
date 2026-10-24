@@ -1,10 +1,5 @@
 import type { DefenderDef, DefenderId, EnemyDef, EnemyId } from "./types.ts";
 
-/**
- * The six household defenders. Damage, rate, range, effect, and price arrays
- * come from the decompiled `src/Grid.as` card objects; the original displayed
- * five levels for each card and charged 100 to deploy.
- */
 export const DEFENDERS: Record<DefenderId, DefenderDef> = {
   grandma: {
     id: "grandma",

@@ -1,6 +1,3 @@
-// All 17 campaign stages. Stage titles come from the original game's
-// locale files, which are not part of the SWF; the recreation numbers
-// them instead of inventing names.
 import type { LevelDefinition } from "./types.ts";
 import { LEVEL_01 } from "./levels/level_01.ts";
 import { LEVEL_02 } from "./levels/level_02.ts";

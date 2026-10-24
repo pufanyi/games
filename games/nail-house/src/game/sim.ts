@@ -1,6 +1,3 @@
-// Deterministic 30 Hz simulation. Every number here comes from the decompiled
-// ActionScript (`src/Game.as`, `src/Grid.as`, `src/attacker`, `src/defender`,
-// and `src/weapon`); see DESIGN.md and CALIBRATION.md for the mapping.
 import { DEFENDERS, ENEMIES } from "./catalog.ts";
 import {
   ENEMY_ATTACK_CD,
@@ -309,8 +306,6 @@ function fire(
 function projectileTicks(kind: WeaponKind, distance: number): number {
   switch (kind) {
     case "rifle":
-      // The SWF bullet lives for a single tick; a few more keep the tracer
-      // readable at 30 Hz without changing the rifle's fixed cooldown.
       return 4;
     case "catapult":
       return Math.max(1, Math.round(10 + (distance / 400) * 10));
@@ -375,7 +370,6 @@ function stepEnemies(state: GameState): void {
     }
     enemy.vx = 0;
     enemy.vy = 0;
-    // The SWF switches to the attack pose and only then starts counting down.
     enemy.attacking = true;
     enemy.attackCd--;
     if (enemy.attackCd > 0) continue;
@@ -525,7 +519,6 @@ function spawnEnemy(state: GameState, type: EnemyId): void {
     targetX: ENEMY_TARGET_X,
     targetY,
     vx: -speed,
-    // Straight diagonal walk; the SWF derives vy from the same ratio.
     vy: ((targetY - startY) * speed) / distance,
     range,
     hp: def.hp,

@@ -1,5 +1,3 @@
-// Sound effects synthesized with Web Audio. The SWF shipped a pile of embedded
-// samples; small original blips keep the build asset-free.
 import type { SoundName } from "../game/types.ts";
 
 let ctx: AudioContext | null = null;
