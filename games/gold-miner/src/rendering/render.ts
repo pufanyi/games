@@ -1,5 +1,5 @@
 // Draws a GameState onto a 2D canvas. Reads the state, never changes it.
-import { WIDTH } from "../game/config.ts";
+import { LEVEL_SECONDS, PIVOT_Y, WIDTH } from "../game/config.ts";
 import {
   circlePath,
   type Ctx,
@@ -14,12 +14,13 @@ import { DECK_Y, drawCamp, drawRig } from "./camp.ts";
 import { drawClaw } from "./claw.ts";
 import { drawScenery } from "./scenery.ts";
 import {
+  clawAngle,
   clawTip,
   type Effect,
   type GameState,
   type Player,
+  type Projectile,
 } from "../game/sim.ts";
-import { PIVOT_Y, TICK_RATE } from "../game/config.ts";
 import { drawItem, drawPocket } from "./sprites.ts";
 
 export function draw(ctx: Ctx, state: GameState) {
@@ -27,6 +28,7 @@ export function draw(ctx: Ctx, state: GameState) {
   for (const item of state.items) drawPocket(ctx, item);
   for (const item of state.items) drawItem(ctx, item, state.tick);
   for (const player of state.players) drawPlayer(ctx, state, player);
+  for (const projectile of state.projectiles) drawProjectile(ctx, projectile);
   for (const effect of state.effects) drawEffect(ctx, effect);
   drawHud(ctx, state);
 }
@@ -37,6 +39,7 @@ function drawPlayer(ctx: Ctx, state: GameState, player: Player) {
 
   // Rope: a dark core with a twisted highlight that moves as it winds.
   const tip = clawTip(player);
+  const angle = clawAngle(player);
   ctx.lineCap = "round";
   ctx.strokeStyle = "#4a2e14";
   ctx.lineWidth = 3.5;
@@ -57,19 +60,42 @@ function drawPlayer(ctx: Ctx, state: GameState, player: Player) {
     ctx,
     tip.x,
     tip.y,
-    claw.angle,
+    angle,
     held
       ? () => {
         // Drawn a little below where it hangs in the simulation, so it sits
         // down in the jaws' grip instead of hiding behind the housing.
-        const drop = held.r * 0.2 + 7;
+        const drop = held.artH * 0.2 + 7;
         ctx.save();
-        ctx.translate(Math.sin(claw.angle) * drop, Math.cos(claw.angle) * drop);
+        ctx.translate(Math.sin(angle) * drop, Math.cos(angle) * drop);
         drawItem(ctx, held, state.tick);
         ctx.restore();
       }
       : undefined,
   );
+}
+
+/** A thrown stick, tumbling and trailing a spark. */
+function drawProjectile(ctx: Ctx, projectile: Projectile) {
+  const { x, y } = projectile;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(0.5);
+  ctx.beginPath();
+  ctx.roundRect(-3, -12, 6, 24, 2);
+  ctx.fillStyle = "#c93426";
+  ctx.fill();
+  ink(ctx, 1.5);
+  ctx.fillStyle = "#f3e2b8";
+  ctx.fillRect(-3, -2, 6, 4);
+  ctx.beginPath();
+  ctx.moveTo(0, -12);
+  ctx.quadraticCurveTo(3, -17, 6, -18);
+  ink(ctx, 1.2);
+  ctx.restore();
+  circlePath(ctx, x + 6, y - 17, 3);
+  ctx.fillStyle = "#ffb300";
+  ctx.fill();
 }
 
 function drawEffect(ctx: Ctx, effect: Effect) {
@@ -178,17 +204,15 @@ function drawHud(ctx: Ctx, state: GameState) {
   if (reached) sparkle(ctx, 164, 26, 8, 0.6 + Math.sin(state.tick / 8) * 0.4);
 
   // Active boosts, under the board.
-  const boosts = (
-    [
-      ["strength", "Strength", "#e57373"],
-      ["clover", "Clover", "#81c784"],
-      ["book", "Rock book", "#a1887f"],
-      ["polish", "Polish", "#4fc3f7"],
-    ] as const
-  ).filter(([key]) => state.boosts[key]);
+  const boosts: [string, string][] = [];
+  if (state.temporaryStrength) boosts.push(["Power", "#e57373"]);
+  else if (state.minerStrength > 10) boosts.push(["Strength", "#e57373"]);
+  if (state.bonuses.clover) boosts.push(["Clover", "#81c784"]);
+  if (state.bonuses.rock) boosts.push(["Rock book", "#a1887f"]);
+  if (state.bonuses.diamond) boosts.push(["Polish", "#4fc3f7"]);
   let bx = 12;
   ctx.font = `13px ${FONT}`;
-  for (const [, label, color] of boosts) {
+  for (const [label, color] of boosts) {
     const w = ctx.measureText(label).width + 16;
     ctx.beginPath();
     ctx.roundRect(bx, 80, w, 20, 10);
@@ -201,7 +225,7 @@ function drawHud(ctx: Ctx, state: GameState) {
   }
 
   // Time and level board, top right.
-  const seconds = Math.ceil(state.timeLeft / TICK_RATE);
+  const seconds = Math.max(0, state.timeLeft);
   const urgent = seconds <= 10;
   woodBoard(ctx, WIDTH - 152, 10, 142, 64, 2);
   clock(ctx, WIDTH - 128, 32, 10, state.timeLeft);
@@ -224,7 +248,7 @@ function drawHud(ctx: Ctx, state: GameState) {
 
   // Dynamite sticks standing on the left end of the deck.
   const baseX = state.players[0].x - 42;
-  const shown = Math.min(state.dynamite, 6);
+  const shown = Math.min(state.sticks, 6);
   for (let i = 0; i < shown; i++) {
     const sx = baseX - i * 7.5;
     const top = DECK_Y - 21;
@@ -243,11 +267,11 @@ function drawHud(ctx: Ctx, state: GameState) {
     ctx.quadraticCurveTo(sx + 2, top - 5, sx + 4, top - 6);
     ink(ctx, 1.2);
   }
-  if (state.dynamite > shown) {
+  if (state.sticks > shown) {
     ctx.textAlign = "right";
     outlinedText(
       ctx,
-      `×${state.dynamite}`,
+      `×${state.sticks}`,
       baseX - shown * 7.5,
       DECK_Y - 10,
       15,
@@ -277,7 +301,7 @@ function clock(ctx: Ctx, x: number, y: number, r: number, timeLeft: number) {
   ctx.fillStyle = "#fff8e6";
   ctx.fill();
   ink(ctx, 2);
-  const a = -Math.PI / 2 + (timeLeft / (60 * TICK_RATE)) * Math.PI * 2;
+  const a = -Math.PI / 2 + (timeLeft / LEVEL_SECONDS) * Math.PI * 2;
   ctx.beginPath();
   ctx.moveTo(x, y);
   ctx.lineTo(x + Math.cos(a) * r * 0.7, y + Math.sin(a) * r * 0.7);

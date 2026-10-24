@@ -13,15 +13,25 @@ import {
   sparkle,
 } from "./paint.ts";
 
+/** Half-width of an animal's tunnel: its walk range in world pixels. */
+const ANIMAL_RANGE = 320;
+
+/** Art half-width and half-height, the radii the sprite painters work in. */
+function radiusOf(item: Item): number {
+  return Math.max(item.artW, item.artH) / 2;
+}
+
 /** A dark hollow in the dirt behind an item that's still buried. */
 export function drawPocket(ctx: Ctx, item: Item) {
-  if (item.kind === "mole") {
-    // The tunnel it patrols.
-    const from = (item.minX ?? item.x) - item.r * 1.6;
-    const to = (item.maxX ?? item.x) + item.r * 1.6;
+  const r = Math.max(item.artW, item.artH) / 2;
+  if (item.kind === "mole" || item.kind === "pig") {
+    // The tunnel it patrols, spanning the original's walk range.
+    const anchor = item.animal?.anchorX ?? item.x;
+    const from = anchor - ANIMAL_RANGE;
+    const to = anchor + 6;
     ctx.fillStyle = "rgb(35 15 0 / 0.26)";
     ctx.beginPath();
-    ctx.roundRect(from, item.y - item.r * 0.95, to - from, item.r * 2, item.r);
+    ctx.roundRect(from, item.y - r * 0.95, to - from, r * 2, r);
     ctx.fill();
     return;
   }
@@ -30,8 +40,8 @@ export function drawPocket(ctx: Ctx, item: Item) {
   ctx.ellipse(
     item.x + 2,
     item.y + 4,
-    item.r * 1.12,
-    item.r * 1.02,
+    r * 1.12,
+    r * 1.02,
     0,
     0,
     Math.PI * 2,
@@ -50,20 +60,31 @@ export function drawItem(ctx: Ctx, item: Item, tick: number) {
     case "rockLarge":
       return drawRock(ctx, item);
     case "diamond":
-      return drawDiamond(ctx, item.x, item.y, item.r, tick + item.id * 37);
+      return drawDiamond(
+        ctx,
+        item.x,
+        item.y,
+        item.artW / 2,
+        tick + item.id * 37,
+      );
     case "bag":
       return drawBag(ctx, item);
     case "bone":
       return drawBone(ctx, item);
+    case "skull":
+      return drawSkull(ctx, item);
     case "tnt":
       return drawTnt(ctx, item, tick);
     case "mole":
       return drawMole(ctx, item, tick);
+    case "pig":
+      return drawPig(ctx, item, tick);
   }
 }
 
 function drawGold(ctx: Ctx, item: Item, tick: number) {
-  const { x, y, r, id } = item;
+  const { x, y, id } = item;
+  const r = radiusOf(item);
   const shape = blobPath(x, y, r, id, 0.24);
   const fill = ctx.createRadialGradient(
     x - r * 0.35,
@@ -125,7 +146,8 @@ function drawGold(ctx: Ctx, item: Item, tick: number) {
 }
 
 function drawRock(ctx: Ctx, item: Item) {
-  const { x, y, r, id } = item;
+  const { x, y, id } = item;
+  const r = radiusOf(item);
   const shape = blobPath(x, y, r, id, 0.32, 8);
   const fill = ctx.createRadialGradient(
     x - r * 0.3,
@@ -240,7 +262,8 @@ export function drawDiamond(
 }
 
 function drawBag(ctx: Ctx, item: Item) {
-  const { x, y, r } = item;
+  const { x, y } = item;
+  const r = radiusOf(item);
   // Sack body.
   ctx.beginPath();
   ctx.moveTo(x - r * 0.45, y - r * 0.55);
@@ -307,9 +330,8 @@ function drawBag(ctx: Ctx, item: Item) {
 }
 
 function drawBone(ctx: Ctx, item: Item) {
-  const { x, y, r, id } = item;
-  // Some of the clutter is a skull instead.
-  if (hash(id * 13) > 0.55) return drawSkull(ctx, item);
+  const { x, y, id } = item;
+  const r = radiusOf(item);
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(hash(id) * Math.PI);
@@ -330,7 +352,8 @@ function drawBone(ctx: Ctx, item: Item) {
 }
 
 function drawSkull(ctx: Ctx, item: Item) {
-  const { x, y, r, id } = item;
+  const { x, y, id } = item;
+  const r = radiusOf(item);
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate((hash(id * 5) - 0.5) * 0.9);
@@ -379,7 +402,8 @@ function drawSkull(ctx: Ctx, item: Item) {
 }
 
 function drawTnt(ctx: Ctx, item: Item, tick: number) {
-  const { x, y, r } = item;
+  const { x, y } = item;
+  const r = radiusOf(item);
   const w = r * 0.85;
   // Barrel with bulging sides.
   ctx.beginPath();
@@ -439,8 +463,9 @@ function drawTnt(ctx: Ctx, item: Item, tick: number) {
  * snout, big digging paws, and eyes squeezed shut against the light.
  */
 function drawMole(ctx: Ctx, item: Item, tick: number) {
-  const { x, y, r, id } = item;
-  const facing = (item.vx ?? 1) >= 0 ? 1 : -1;
+  const { x, y, id } = item;
+  const r = radiusOf(item);
+  const facing = item.animal?.facing ?? 1;
   const stride = Math.sin(tick * 0.45 + id);
   const pink = "#f2a7b0";
   ctx.save();
@@ -526,9 +551,7 @@ function drawMole(ctx: Ctx, item: Item, tick: number) {
   ctx.fillStyle = "rgb(240 110 120 / 0.45)";
   ctx.fill();
 
-  if (item.carrying) drawDiamond(ctx, r * 1.25, r * 0.55, 8, tick + id * 37);
-
-  // Big digging paw out front, over anything it carries.
+  // Big digging paw out front.
   ctx.beginPath();
   ctx.ellipse(r * 0.95, r * 0.62, 5, 3.6, -0.3, 0, Math.PI * 2);
   ctx.fillStyle = pink;
@@ -540,5 +563,96 @@ function drawMole(ctx: Ctx, item: Item, tick: number) {
     ctx.lineTo(r * 0.95 + 6, r * 0.62 + c * 2.2);
   }
   ink(ctx, 0.9);
+  ctx.restore();
+}
+
+/**
+ * A farm pig rooting its way along the tunnel: a pink barrel of a body, a
+ * snout, a floppy ear, and a curly tail. Drawn facing right, mirrored when it
+ * walks left, like the mole.
+ */
+function drawPig(ctx: Ctx, item: Item, tick: number) {
+  const { x, y, id } = item;
+  const r = radiusOf(item);
+  const facing = item.animal?.facing ?? 1;
+  const stride = Math.sin(tick * 0.4 + id);
+  const pink = "#f2a7b0";
+  const dark = "#d97f8f";
+
+  ctx.save();
+  ctx.translate(x, y - Math.abs(stride) * 1.1);
+  ctx.scale(facing, 1);
+
+  // Legs, stepping.
+  for (const [foot, phase] of [[-0.55, 1], [0.35, -1]]) {
+    ctx.beginPath();
+    ctx.roundRect(
+      r * foot + stride * 2 * phase,
+      r * 0.45,
+      r * 0.3,
+      r * 0.55,
+      2,
+    );
+    ctx.fillStyle = dark;
+    ctx.fill();
+    ink(ctx, 1.3);
+  }
+
+  // Curly tail.
+  ctx.beginPath();
+  ctx.moveTo(-r * 1.15, -r * 0.15);
+  ctx.bezierCurveTo(
+    -r * 1.6,
+    -r * 0.5,
+    -r * 1.75,
+    r * 0.2,
+    -r * 1.4,
+    r * 0.25,
+  );
+  ink(ctx, 2.2);
+
+  // Body and head as one silhouette.
+  const body = new Path2D();
+  body.ellipse(-r * 0.1, 0, r * 1.2, r * 0.75, 0, 0, Math.PI * 2);
+  body.moveTo(r * 1.0, -r * 0.1);
+  body.arc(r * 0.85, -r * 0.1, r * 0.55, 0, Math.PI * 2);
+  ink(ctx, 4, body);
+  const hide = ctx.createRadialGradient(-r * 0.2, -r * 0.45, 2, 0, 0, r * 1.4);
+  hide.addColorStop(0, "#ffc6cd");
+  hide.addColorStop(1, "#e8849a");
+  ctx.fillStyle = hide;
+  ctx.fill(body);
+
+  // Ear.
+  ctx.beginPath();
+  ctx.moveTo(r * 0.7, -r * 0.55);
+  ctx.lineTo(r * 0.95, -r * 1.05);
+  ctx.lineTo(r * 1.2, -r * 0.5);
+  ctx.closePath();
+  ctx.fillStyle = dark;
+  ctx.fill();
+  ink(ctx, 1.4);
+
+  // Snout.
+  ctx.beginPath();
+  ctx.ellipse(r * 1.35, r * 0.02, r * 0.3, r * 0.24, 0, 0, Math.PI * 2);
+  ctx.fillStyle = pink;
+  ctx.fill();
+  ink(ctx, 1.4);
+  ctx.fillStyle = "#a8556a";
+  for (const s of [-0.1, 0.1]) {
+    ctx.beginPath();
+    ctx.ellipse(r * 1.35 + r * s, r * 0.02, 1.1, 1.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Eye and a blush.
+  circlePath(ctx, r * 0.95, -r * 0.28, 2.2);
+  ctx.fillStyle = INK;
+  ctx.fill();
+  circlePath(ctx, r * 1.05, -r * 0.1, 2.4);
+  ctx.fillStyle = "rgb(220 90 110 / 0.35)";
+  ctx.fill();
+
   ctx.restore();
 }
