@@ -17,9 +17,8 @@ import type { Session } from "../runtime/session.ts";
 
 export class Guide {
   readonly group = new Group();
-  private readonly aim = this.line(0xe6e9dd, 0.55, true);
-  private readonly object = this.line(0xffffff, 0.75);
-  private readonly tangent = this.line(0xffffff, 0.3);
+  private readonly aim = this.line(0xf4f1e6, 0.5);
+  private readonly object = this.line(0xffffff, 0.6);
   private readonly head = this.line(0xffffff, 0.35, true);
   private readonly ring = new Mesh(
     new RingGeometry(R, R + 0.0018, 48),
@@ -79,15 +78,17 @@ export class Guide {
     const placing = session.mode === "game" && game.phase === "placing";
     const aiming = session.mode === "game" && game.phase === "aiming" &&
       !session.paused;
-    this.aim.visible = aiming;
+    // Placement help always shows; the aim guide is the player's choice.
+    const guiding = aiming && session.guide;
+    this.aim.visible = guiding;
     this.head.visible = placing && game.area === "kitchen";
-    this.ring.visible = placing || aiming;
-    this.object.visible = this.tangent.visible = false;
+    this.ring.visible = placing || guiding;
+    this.object.visible = false;
     this.ring.material.color.set(
       placing && !canPlace(game) ? 0xff4b46 : 0xffffff,
     );
     this.ring.position.set(cue.x, cue.y, 0.003);
-    if (!aiming) return;
+    if (!guiding) return;
     const guide = aimGuide(
       game.balls,
       Math.cos(session.aim),
@@ -96,20 +97,13 @@ export class Guide {
     this.segment(this.aim, cue.x, cue.y, guide.x, guide.y);
     this.ring.position.set(guide.x, guide.y, 0.003);
     if (guide.target) {
-      this.object.visible = this.tangent.visible = true;
+      this.object.visible = true;
       this.segment(
         this.object,
         guide.target.x,
         guide.target.y,
-        guide.target.x + guide.objectX * 0.35,
-        guide.target.y + guide.objectY * 0.35,
-      );
-      this.segment(
-        this.tangent,
-        guide.x,
-        guide.y,
-        guide.x + guide.cueX * 0.25,
-        guide.y + guide.cueY * 0.25,
+        guide.target.x + guide.objectX * 0.3,
+        guide.target.y + guide.objectY * 0.3,
       );
     }
   }

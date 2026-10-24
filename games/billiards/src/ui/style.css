@@ -68,6 +68,15 @@ canvas {
   cursor: crosshair;
 }
 
+/* In the cue view the table is dragged, not pointed at. */
+canvas.cue-view {
+  cursor: grab;
+}
+
+canvas.cue-view:active {
+  cursor: grabbing;
+}
+
 /* Screens */
 
 .overlay {
@@ -412,6 +421,12 @@ kbd {
 .camera-control {
   position: absolute;
   left: 8%;
+  bottom: 2%;
+}
+
+.move-control {
+  position: absolute;
+  left: 18%;
   bottom: 2%;
 }
 

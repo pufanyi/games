@@ -10,6 +10,7 @@ function view(overrides: Partial<View> = {}): View {
     mode: "game",
     paused: false,
     muted: false,
+    guide: false,
     phase: "aiming",
     area: "table",
     ballInHand: false,
@@ -69,10 +70,37 @@ Deno.test("the HUD calls out a foul while the cue ball is in hand", () => {
   const html = renderToStaticMarkup(
     <Hud
       view={view({ phase: "placing", foul: "scratch", ballInHand: true })}
+      camera="cue"
       onPause={noop}
       onMute={noop}
+      onGuide={noop}
     />,
   );
   assertStringIncludes(html, "Scratch! −10s");
   assertStringIncludes(html, "Ball in hand: place the cue ball");
+});
+
+Deno.test("the HUD shows the aim guide setting and cue-view hints", () => {
+  const off = renderToStaticMarkup(
+    <Hud
+      view={view()}
+      camera="cue"
+      onPause={noop}
+      onMute={noop}
+      onGuide={noop}
+    />,
+  );
+  assertStringIncludes(off, "Aim guide off");
+  assertStringIncludes(off, "Drag to aim, hold still to shoot");
+  const on = renderToStaticMarkup(
+    <Hud
+      view={view({ guide: true, ballInHand: true })}
+      camera="top"
+      onPause={noop}
+      onMute={noop}
+      onGuide={noop}
+    />,
+  );
+  assertStringIncludes(on, "Aim guide on");
+  assertStringIncludes(on, "Aim, or drag the cue ball");
 });

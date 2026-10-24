@@ -209,16 +209,24 @@ judge(state: GameState, result: ShotResult): Outcome;
 
 ## Controls
 
-- [x] Mouse: the cue follows the pointer; hold the left button on the table to
-      lock aim and charge, release to shoot. Clicking or dragging the cue ball
-      with ball in hand still places it without charging. Alternatively, pull
-      the power bar (right of the table) down and let go to shoot. The same bar
-      works for touch, so there's one way to shoot rather than a separate
-      drag-back on the table
-- [x] Touch: drag on the table to aim, the power bar to shoot; fine-aim buttons
-      under it
+- [x] Mouse, cue view: drag across the table to turn the aim (Shift for fine);
+      dragging up and down raises or lowers the view, and the wheel zooms.
+      Holding the left button still charges, release to shoot; a press becomes a
+      drag past 6 px, which cancels the charge and restores the set strength
+- [x] Mouse, top view: the cue follows the pointer; hold the left button on the
+      table to lock aim and charge, release to shoot. Clicking or dragging the
+      cue ball with ball in hand still places it without charging
+- [x] Either view: pull the power bar (right of the table) down and let go to
+      shoot. The same bar works for touch, so there's one way to shoot rather
+      than a separate drag-back on the table
+- [x] Touch: drag on the table to aim (turning in the cue view, pointing in the
+      top view), the power bar or Hold button to shoot; fine-aim buttons under
+      it
+- [x] Ball in hand while aiming: the Move cue ball button or M picks it up again
+      in either view
 - [x] Keyboard: ← → aim (Shift for fine), ↑ ↓ strength, Enter shoots at the set
-      strength, W A S D spin, M picks the cue ball up with ball in hand
+      strength, W A S D spin, M picks the cue ball up with ball in hand, G
+      toggles the aim guide
 - [x] Hold Space or the on-screen Hold button to charge from 0 to 100% over 1.5
       seconds; release to shoot. Maximum strength holds without firing. The
       numeric Strength indicator and cue pullback show the current charge
@@ -232,10 +240,12 @@ judge(state: GameState, result: ShotResult): Outcome;
       center hit with a level cue after each shot
 - [x] Ball in hand: drag the cue ball (or arrow keys, Enter to place); positions
       overlapping a ball or outside the allowed area are refused
-- [x] Aim line: from the cue ball to a ghost ball where it first makes contact,
-      with a short line for the object ball's direction and a faint one for the
-      cue ball's tangent line. It assumes no spin and no throw, like a real
-      player's guess, so the physics still matters
+- [x] Aim guide, off by default: a line from the cue ball to a ghost ball where
+      it first makes contact, and a short line for the object ball's direction.
+      It assumes no spin and no throw, like a real player's guess, so the
+      physics still matters. Toggled on the title screen, in the HUD, or with G;
+      remembered in `localStorage`. Placement help (the cue ball ring, the head
+      string) always shows
 
 ## Screens and HUD
 
@@ -257,18 +267,34 @@ judge(state: GameState, result: ShotResult): Outcome;
 Three.js renders the table in 3D (decided). The deterministic physics remains
 plain TypeScript and does not depend on Three.js.
 
-- [x] Perspective table view and an orthographic top view, switchable without
-      changing aim or game state
-- [x] Three-dimensional cloth, wooden rails, cushion noses, pockets, legs, and a
-      tapered cue with ferrule and chalked tip
+- [x] Cue view (the default): a perspective camera low behind the cue ball,
+      looking down the aim line and following it as the aim turns. After the
+      strike it holds for a moment, then rises to an overview of the whole table
+      from the long side nearer the shooter; ball in hand, the title and results
+      use the same overview. Camera moves ease in orbit coordinates (azimuth,
+      pitch, distance around a pivot), so turning never swings through the
+      table. A raised cue lifts the camera clear of it
+- [x] Orthographic top view, switchable without changing aim or game state
+- [x] Cushions swept from a profile along the physics noses: an undercut face up
+      to the nose at the physics height, a rounded top flush with the rail,
+      mitered at the mouths and closed off over the holes. Cloth one shade
+      deeper on the cushions than the bed, so the cushion line reads clearly
+- [x] Four mitered wooden rails (grain along each) cut around the pockets, with
+      leather pocket liners, inlaid diamonds, an apron, and tapered legs; the
+      cloth is one sheet with the pocket holes cut out of it
+- [x] A tapered cue with ferrule and chalked tip
 - [x] Ball meshes with original procedural numbered/striped textures, physically
       based materials, shadows, and generated environment reflections
 - [x] Ball orientation follows recorded angular velocity; pocketed balls animate
       downward without affecting the physics result
 - [x] Ray-to-plane pointer picking in both views, using the ball-center plane;
       mouse and touch coordinates stay correct when the stage scales
+- [x] Lighting: a key light from nearly overhead with shadows, two pools of
+      light over the bed, a dim hemisphere, and fog into a dark room. Cloth and
+      wood textures use the GPU's maximum anisotropic filtering, so the cloth
+      stays sharp at the cue view's grazing angles
 - [x] Shared table geometry: rendered cushion noses use the physical segments,
-      and cloth cutouts use the physical pocket circles
+      and cloth and rail cutouts use the physical pocket circles
 - [x] Responsive drawing buffer capped at 2× device pixel ratio; GPU resources
       are disposed when the component unmounts
 - [x] Graphics context loss pauses the game. Restoration rebuilds rendering

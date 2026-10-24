@@ -12,6 +12,7 @@ import {
   setTip,
   shootNow,
   start,
+  toggleGuide,
   turnAim,
 } from "./session.ts";
 
@@ -37,6 +38,11 @@ export function bindKeyboard(session: Session, refresh: () => void) {
     if (event.target instanceof HTMLButtonElement) return;
     // Let the elevation slider have its own arrow keys.
     if (event.target instanceof HTMLInputElement) return;
+    if (event.key === "g" || event.key === "G") {
+      toggleGuide(session);
+      refresh();
+      return;
+    }
     if (!isActive(session)) return;
     const { game } = session;
     const step = event.shiftKey ? 0.1 : 1;

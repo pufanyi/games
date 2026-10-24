@@ -9,6 +9,7 @@ export interface Best {
 
 const BEST_KEY = "billiards:best";
 const MUTED_KEY = "billiards:muted";
+const GUIDE_KEY = "billiards:guide";
 
 function load(key: string): unknown {
   try {
@@ -45,4 +46,13 @@ export function loadMuted(): boolean {
 
 export function saveMuted(muted: boolean) {
   save(MUTED_KEY, muted);
+}
+
+/** The aim guide is off unless the player turned it on. */
+export function loadGuide(): boolean {
+  return load(GUIDE_KEY) === true;
+}
+
+export function saveGuide(guide: boolean) {
+  save(GUIDE_KEY, guide);
 }

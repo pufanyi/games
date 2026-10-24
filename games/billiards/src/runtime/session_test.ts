@@ -12,6 +12,7 @@ import {
   setPower,
   setTip,
   shootNow,
+  toggleGuide,
   turnAim,
   update,
   viewOf,
@@ -111,4 +112,21 @@ Deno.test("charge strength depends on elapsed time, not frame count", () => {
   update(a, 0.6);
   for (let frame = 0; frame < 60; frame++) update(b, 0.01);
   assertAlmostEquals(a.power, b.power);
+});
+
+Deno.test("cancelling a charge restores the strength set before it", () => {
+  const session = aiming();
+  setPower(session, 0.65);
+  beginCharge(session, "table");
+  update(session, 0.1);
+  cancelCharge(session);
+  assertAlmostEquals(session.power, 0.65);
+  assertEquals(session.game.shots, 0);
+});
+
+Deno.test("the aim guide starts off and toggles", () => {
+  const session = createSession();
+  assertEquals(viewOf(session).guide, false);
+  toggleGuide(session);
+  assertEquals(viewOf(session).guide, true);
 });

@@ -1,6 +1,7 @@
 // Everything over the canvas: the title, pause and result screens, the HUD,
 // and the potted-ball tray. They render from a `View` and report actions upward.
 import { type MouseEvent, type ReactNode, useEffect, useRef } from "react";
+import type { CameraView } from "../rendering/camera.ts";
 import { ballColor } from "../rendering/colors.ts";
 import { FOUL_PENALTY, TIME_LIMIT } from "../rules/timed.ts";
 import type { View } from "../runtime/session.ts";
@@ -42,8 +43,36 @@ function Panel({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/** The aim guide's on/off switch, on the title screen and in the HUD. */
+function GuideToggle(
+  { view, onGuide, className }: {
+    view: View;
+    onGuide: () => void;
+    className: string;
+  },
+) {
+  return (
+    <button
+      type="button"
+      className={className}
+      aria-pressed={view.guide}
+      title="Aim line and ghost ball (G)"
+      onClick={(event) => {
+        onGuide();
+        event.currentTarget.blur();
+      }}
+    >
+      {view.guide ? "Aim guide on" : "Aim guide off"}
+    </button>
+  );
+}
+
 export function TitleScreen(
-  { view, onPlay }: { view: View; onPlay: () => void },
+  { view, onPlay, onGuide }: {
+    view: View;
+    onPlay: () => void;
+    onGuide: () => void;
+  },
 ) {
   const best = bestText(view);
   return (
@@ -56,15 +85,17 @@ export function TitleScreen(
         seconds.
       </p>
       <p className="keys">
-        Aim with the mouse, then hold the left button to charge and release to
-        shoot. Space or the Hold button also charges; touch drags to aim. Drag
+        You stand behind the cue: drag across the table to turn (up and down to
+        raise the view, scroll to zoom), then hold the left button still to
+        charge and release to shoot. Space or the Hold button also charges. Drag
         the strength bar for precise shots. Or <kbd>←</kbd> <kbd>→</kbd> aim,
         {" "}
         <kbd>↑</kbd> <kbd>↓</kbd> strength, <kbd>Enter</kbd>{" "}
         shoot at set strength, <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd>{" "}
-        <kbd>D</kbd> spin.
+        <kbd>D</kbd> spin, <kbd>G</kbd> aim guide.
       </p>
       {best && <p className="muted">{best}</p>}
+      <GuideToggle view={view} onGuide={onGuide} className="button" />
       <button type="button" className="button primary" onClick={onPlay}>
         Play
       </button>
@@ -127,7 +158,7 @@ export function ResultScreen({
 }
 
 /** What to do next, shown under the clock. */
-function hint(view: View): string {
+function hint(view: View, camera: CameraView): string {
   if (view.charging) return "Release to shoot · Esc to cancel";
   if (view.phase === "placing") {
     return view.area === "kitchen"
@@ -135,6 +166,11 @@ function hint(view: View): string {
       : "Ball in hand: place the cue ball";
   }
   if (view.phase === "rolling") return "";
+  if (camera === "cue") {
+    return view.ballInHand
+      ? "Drag to aim · ball in hand"
+      : "Drag to aim, hold still to shoot";
+  }
   if (view.ballInHand) return "Aim, or drag the cue ball";
   return "Aim, then pull the power bar";
 }
@@ -150,12 +186,16 @@ const FOUL_TEXT = {
  */
 export function Hud({
   view,
+  camera,
   onPause,
   onMute,
+  onGuide,
 }: {
   view: View;
+  camera: CameraView;
   onPause: () => void;
   onMute: () => void;
+  onGuide: () => void;
 }) {
   const press =
     (action: () => void) => (event: MouseEvent<HTMLButtonElement>) => {
@@ -183,10 +223,11 @@ export function Hud({
             : `${view.ballsLeft} left · ${view.shots} ${
               view.shots === 1 ? "shot" : "shots"
             }`}
-          <span className="hint">{hint(view)}</span>
+          <span className="hint">{hint(view, camera)}</span>
         </span>
       </div>
       <div className="hud-right">
+        <GuideToggle view={view} onGuide={onGuide} className="control" />
         <button
           type="button"
           className="control"

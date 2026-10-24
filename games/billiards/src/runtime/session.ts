@@ -18,8 +18,10 @@ import type { Foul } from "../rules/timed.ts";
 import {
   type Best,
   loadBest,
+  loadGuide,
   loadMuted,
   saveBest,
+  saveGuide,
   saveMuted,
 } from "./storage.ts";
 
@@ -34,11 +36,15 @@ export interface Session {
   mode: "title" | "game";
   paused: boolean;
   muted: boolean;
+  /** Show the aim line and ghost ball while aiming. */
+  guide: boolean;
   game: Game;
   /** Aim direction in radians, counterclockwise from +x (toward the foot). */
   aim: number;
   /** 0–1; the cue speed rises with its square, for finer soft shots. */
   power: number;
+  /** The strength set before a charge, restored if the charge is cancelled. */
+  presetPower: number;
   charge: ChargeSource | null;
   /** Dragging or charging pulls the rendered cue back. */
   pulling: boolean;
@@ -55,6 +61,7 @@ export interface View {
   mode: Session["mode"];
   paused: boolean;
   muted: boolean;
+  guide: boolean;
   phase: Game["phase"];
   area: Game["area"];
   ballInHand: boolean;
@@ -84,9 +91,11 @@ export function createSession(): Session {
     mode: "title",
     paused: false,
     muted,
+    guide: loadGuide(),
     game: createGame(newSeed()),
     aim: 0,
     power: 0.5,
+    presetPower: 0.5,
     pulling: false,
     charge: null,
     tip: [0, 0],
@@ -102,6 +111,7 @@ export function viewOf(s: Session): View {
     mode: s.mode,
     paused: s.paused,
     muted: s.muted,
+    guide: s.guide,
     phase: game.phase,
     area: game.area,
     ballInHand: game.ballInHand,
@@ -163,6 +173,11 @@ export function toggleMuted(s: Session) {
   saveMuted(s.muted);
 }
 
+export function toggleGuide(s: Session) {
+  s.guide = !s.guide;
+  saveGuide(s.guide);
+}
+
 /** Aims the cue ball at a point on the table. */
 export function aimAt(s: Session, x: number, y: number) {
   if (s.charge) return;
@@ -189,6 +204,7 @@ export function beginCharge(s: Session, source: ChargeSource) {
     return;
   }
   s.charge = source;
+  s.presetPower = s.power;
   s.power = 0;
   s.pulling = true;
 }
@@ -200,6 +216,7 @@ export function releaseCharge(s: Session, source: ChargeSource) {
 }
 
 export function cancelCharge(s: Session) {
+  if (s.charge) s.power = s.presetPower;
   s.charge = null;
   s.pulling = false;
 }

@@ -4,6 +4,7 @@ import {
   type BufferGeometry,
   Color,
   DirectionalLight,
+  Fog,
   HemisphereLight,
   Line,
   type Material,
@@ -20,12 +21,12 @@ import {
   WebGLRenderer,
 } from "three";
 import { HEIGHT, WIDTH } from "./layout.ts";
-import type { Session } from "../runtime/session.ts";
+import { isActive, type Session } from "../runtime/session.ts";
 import { Balls } from "./balls.ts";
 import { type CameraView, TableCamera } from "./camera.ts";
 import { Cue } from "./cue.ts";
 import { Guide } from "./guide.ts";
-import { createTable } from "./table.ts";
+import { createTable, FLOOR } from "./table.ts";
 
 export class Renderer {
   readonly camera = new TableCamera();
@@ -45,64 +46,77 @@ export class Renderer {
     });
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.toneMapping = ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.toneMappingExposure = 1.05;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFShadowMap;
-    this.scene.background = new Color(0x101816);
+    this.scene.background = new Color(0x0d0b09);
+    this.scene.fog = new Fog(0x0d0b09, 4, 11);
     this.scene.add(
-      createTable(),
+      createTable(this.renderer.capabilities.getMaxAnisotropy()),
       this.balls.group,
       this.cue.group,
       this.guide.group,
     );
-    this.scene.add(new HemisphereLight(0xdce9ef, 0x3b3024, 1.2));
-    const key = new DirectionalLight(0xfff3da, 1.8);
-    key.position.set(-1.2, -0.8, 3.5);
+    this.scene.add(new HemisphereLight(0xd9e4e8, 0x2a2018, 0.75));
+    // The lamp over the table: a key from nearly overhead, so balls sit on
+    // their shadows, and two pools of light that fall off toward the rails.
+    const key = new DirectionalLight(0xfff1dc, 1.5);
+    key.position.set(0.5, -0.7, 2.8);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
     Object.assign(key.shadow.camera, {
-      left: -1.8,
-      right: 1.8,
-      top: 1.2,
-      bottom: -1.2,
-      near: 0.1,
-      far: 8,
+      left: -1.75,
+      right: 1.75,
+      top: 1.1,
+      bottom: -1.1,
+      near: 1,
+      far: 4.5,
     });
-    key.shadow.normalBias = 0.004;
-    key.shadow.bias = -0.00003;
+    key.shadow.radius = 3;
+    key.shadow.normalBias = 0.002;
+    key.shadow.bias = -0.0002;
     this.scene.add(key);
-    const fill = new DirectionalLight(0xc7e1ff, 0.7);
-    fill.position.set(1.5, 1, 2);
-    this.scene.add(fill);
-    for (const x of [-0.7, 0.7]) {
-      const lamp = new SpotLight(0xfff5dd, 12, 5, Math.PI / 3, 0.9, 2);
-      lamp.position.set(x, 0, 1.8);
+    for (const x of [-0.75, 0.75]) {
+      const lamp = new SpotLight(0xffefd2, 5, 4, Math.PI / 3.2, 0.85, 2);
+      lamp.position.set(x, 0, 1.25);
       lamp.target.position.set(x, 0, 0);
       this.scene.add(lamp, lamp.target);
     }
     const floor = new Mesh(
       new PlaneGeometry(30, 30),
-      new MeshStandardMaterial({ color: 0x070b09, roughness: 0.95 }),
+      new MeshStandardMaterial({ color: 0x1c140f, roughness: 0.95 }),
     );
-    floor.position.z = -0.85;
-    floor.receiveShadow = false;
+    floor.position.z = FLOOR;
     this.scene.add(floor);
 
-    // A small procedural studio supplies reflections without network HDR assets.
+    // A small procedural pool hall supplies reflections without network HDR
+    // assets: the long lamp overhead and a few dim walls.
     const studio = new Scene();
-    studio.background = new Color(0x303c39);
-    for (const x of [-1, 1]) {
-      const panel = new Mesh(
-        new BoxGeometry(2.4, 0.4, 0.02),
-        new MeshBasicMaterial({ color: 0xffffff }),
+    studio.background = new Color(0x1d1a17);
+    const panel = (
+      w: number,
+      h: number,
+      x: number,
+      y: number,
+      z: number,
+      color: number,
+    ) => {
+      const mesh = new Mesh(
+        new BoxGeometry(w, h, 0.02),
+        new MeshBasicMaterial({ color }),
       );
-      panel.position.set(x, 0, 2);
-      studio.add(panel);
+      mesh.position.set(x, y, z);
+      studio.add(mesh);
+      return mesh;
+    };
+    panel(2.2, 0.35, 0, 0, 1.4, 0xffffff);
+    for (const y of [-3, 3]) {
+      panel(6, 2, 0, y, 0.6, 0x4a3b2c).rotation.x = Math.PI / 2;
     }
     const pmrem = new PMREMGenerator(this.renderer);
-    this.environment = pmrem.fromScene(studio, 0.04);
+    this.environment = pmrem.fromScene(studio, 0.03);
     this.scene.environment = this.environment.texture;
-    this.scene.environmentIntensity = 0.6;
+    this.scene.environmentIntensity = 0.55;
     pmrem.dispose();
     disposeScene(studio);
 
@@ -116,14 +130,17 @@ export class Renderer {
     const height = this.canvas.clientHeight || HEIGHT;
     this.renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 2));
     this.renderer.setSize(width, height, false);
+    this.camera.setAspect(width / height);
   }
 
   setView(view: CameraView) {
     this.camera.view = view;
   }
 
+  /** `dt` is real time; balls only spin while the game runs. */
   draw(session: Session, dt: number) {
-    this.balls.update(session.game, dt);
+    this.camera.update(session, dt);
+    this.balls.update(session.game, isActive(session) ? dt : 0);
     this.cue.update(session);
     this.guide.update(session);
     this.renderer.render(this.scene, this.camera.active);
