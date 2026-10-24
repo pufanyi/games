@@ -134,8 +134,6 @@ that line too (and vice versa).
   coming-soon page. Use browser Back to return to the catalog.
 - Games should fill their window (`100vw` × `100vh`) and scale to its size. Each
   game owns its responsive layout; there is no platform player wrapper.
-- The remaining `sample-*` entries in `platform/games.ts` are layout
-  placeholders; remove them as real games are added.
 - A game can have a `games/<slug>/DESIGN.md` with its requirements as a
   checklist. Read it before working on that game and tick items off as they're
   built. Open decisions are marked **Decision:**; ask the user rather than
@@ -143,11 +141,13 @@ that line too (and vice versa).
 
 ## Games
 
-| Game       | Status                                                       | Design                       |
-| ---------- | ------------------------------------------------------------ | ---------------------------- |
-| Gold Miner | v1: single-player complete; multiplayer not started          | `games/gold-miner/DESIGN.md` |
-| Billiards  | Single-player complete with cue view; two-player not started | `games/billiards/DESIGN.md`  |
-| Bomb It 3  | Four modes and local two-player; fidelity gaps documented    | `games/bomb-it-3/DESIGN.md`  |
+| Game         | Status                                                              | Design                         |
+| ------------ | ------------------------------------------------------------------- | ------------------------------ |
+| Gold Miner   | v1: single-player complete; multiplayer not started                 | `games/gold-miner/DESIGN.md`   |
+| Billiards    | Single-player complete; two-player not started                      | `games/billiards/DESIGN.md`    |
+| Bomb It 3    | Four modes and local two-player; fidelity gaps documented           | `games/bomb-it-3/DESIGN.md`    |
+| Nail House   | v1: seven stages, six-card shop, endless stage 7 complete           | `games/nail-house/DESIGN.md`   |
+| Kingdom Rush | All 17 stages and 3 modes; tower and enemy abilities partly missing | `games/kingdom-rush/DESIGN.md` |
 
 ### Bomb It 3 source organization
 
@@ -230,6 +230,53 @@ Enter fires preset strength, and dragging the bar remains available.
 Cancellation must disarm release on pause, focus loss, pointer interruption, or
 game end. Keep charge ownership explicit so keyboard and pointer inputs cannot
 fire each other's shots. Physics receives cue speed, not charge timing.
+
+### Nail House source organization
+
+`games/nail-house/` is a standalone Canvas 2D + React tower-defence game
+recreated from the decompiled Flash original. The SWF and extracted Flash assets
+are research inputs only and must not be included in published builds. Read
+`DESIGN.md` and `CALIBRATION.md` before changing gameplay or fidelity claims.
+
+- `src/game/`: deterministic 30 Hz simulation, decompiled catalog and tuning,
+  wave tables, seeded RNG, and tests; no browser or React imports.
+- `src/rendering/`: original Canvas art for the skyline, pit, house, family,
+  crew, weapons, and effects; read-only state access.
+- `src/runtime/`: session actions, guarded local storage, and Web Audio.
+- `src/ui/`: React menus, HUD, card bar, overlays, Canvas host, and CSS.
+- `src/main.tsx`: the browser entry point.
+
+Rendering owns animation frames; React updates on transitions and once per
+second. Cards deploy into the four window slots, and only one copy of each
+family member can be out. The shop charges `$100` to deploy and
+`$200/$250/$350/$400` for levels 2–5. Stage 7 is endless survival. Progress and
+mute live in `localStorage` under `nail-house:unlocked` and `nail-house:muted`.
+
+### Kingdom Rush source organization
+
+`games/kingdom-rush/` is a standalone Canvas 2D + React tower defence game with
+all 17 stages of the original Flash game, each in campaign, heroic and iron
+modes. Read its `DESIGN.md` and `CALIBRATION.md` before changing gameplay or
+claiming fidelity. The original SWF, its extracted bitmaps and the content
+pipeline are research inputs kept in the gitignored `reference/` folder; nothing
+from them is committed or published.
+
+- `src/content/`: generated stage, tower, enemy and power tables. Do not edit by
+  hand; regenerate with the pipeline described in `CALIBRATION.md`.
+- `src/game/`: deterministic 30 Hz simulation split into lane geometry, enemy,
+  soldier, tower, projectile, wave and world modules, plus the command layer; no
+  browser or React imports.
+- `src/rendering/`: procedural Canvas terrain, figures, effects and the board
+  renderer; reads state without mutating it.
+- `src/runtime/`: session state and actions (build, upgrade, sell, powers,
+  waves, speed, pause), `localStorage` progress, and unlock rules.
+- `src/ui/`: React level picker, game screen, HUD, icons, CSS, and the browser
+  entry point.
+
+Waves, damage rolls and lane choices use a seeded RNG so a retry replays the
+same run. Tower specialisations and most enemy special abilities are stat-only
+or omitted; `CALIBRATION.md` lists them class by class. Do not present the
+recreation as a pixel-identical port.
 
 ## Coding standard
 

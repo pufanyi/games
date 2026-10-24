@@ -1,0 +1,180 @@
+import type { DefenderDef, DefenderId, EnemyDef, EnemyId } from "./types.ts";
+
+/**
+ * The six household defenders. Damage, rate, range, effect, and price arrays
+ * come from the decompiled `src/Grid.as` card objects; the original displayed
+ * five levels for each card and charged 100 to deploy.
+ */
+export const DEFENDERS: Record<DefenderId, DefenderDef> = {
+  grandma: {
+    id: "grandma",
+    name: "Mom Ding",
+    role: "Slipper thrower",
+    weapon: "slipper",
+    power: [10, 20, 30, 40, 50],
+    interval: [0.9, 0.9, 0.9, 0.9, 0.9],
+    range: [400, 400, 400, 400, 400],
+    effect: [0, 1, 2, 3, 4],
+    cost: [100, 200, 250, 350, 400],
+    reserves: true,
+    attackTicks: 15,
+    muzzleX: 10,
+    muzzleY: -20,
+  },
+  grandpa: {
+    id: "grandpa",
+    name: "Grandpa Ding",
+    role: "Old rifle",
+    weapon: "rifle",
+    power: [22, 44, 66, 88, 110],
+    interval: [2, 2, 2, 2, 2],
+    range: [500, 500, 500, 500, 500],
+    effect: [0, 1, 2, 3, 4],
+    cost: [100, 200, 250, 350, 400],
+    reserves: false,
+    attackTicks: 15,
+    muzzleX: 20,
+    muzzleY: -30,
+  },
+  muscle: {
+    id: "muscle",
+    name: "Big Bro Ding",
+    role: "Dumbbell slam",
+    weapon: "dumbbell",
+    power: [25, 50, 75, 120, 200],
+    interval: [3, 3, 3, 3, 3],
+    range: [400, 400, 400, 400, 400],
+    effect: [0, 1, 2, 3, 4],
+    cost: [100, 200, 250, 350, 400],
+    reserves: true,
+    attackTicks: 23,
+    muzzleX: 10,
+    muzzleY: -20,
+  },
+  tinker: {
+    id: "tinker",
+    name: "Dad Ding",
+    role: "Brick catapult",
+    weapon: "catapult",
+    power: [4, 8, 12, 16, 20],
+    interval: [0.4, 0.4, 0.4, 0.4, 0.4],
+    range: [450, 450, 450, 450, 450],
+    effect: [0, 1, 2, 3, 4],
+    cost: [100, 200, 250, 350, 400],
+    reserves: true,
+    attackTicks: 24,
+    muzzleX: 10,
+    muzzleY: -20,
+  },
+  auntie: {
+    id: "auntie",
+    name: "Auntie Ding",
+    role: "Fire bottles",
+    weapon: "bottle",
+    power: [2, 4, 6, 8, 10],
+    interval: [3, 2.95, 2.9, 2.85, 2.8],
+    range: [400, 400, 400, 400, 400],
+    effect: [0, 1, 2, 3, 4],
+    cost: [100, 200, 250, 350, 400],
+    reserves: false,
+    attackTicks: 21,
+    muzzleX: 10,
+    muzzleY: -20,
+  },
+  kid: {
+    id: "kid",
+    name: "Little Ding",
+    role: "Firecracker",
+    weapon: "cracker",
+    power: [10, 20, 30, 40, 50],
+    interval: [3, 2.9, 2.8, 2.7, 2.6],
+    range: [400, 400, 400, 400, 400],
+    effect: [0, 1, 2, 3, 4],
+    cost: [100, 200, 250, 350, 400],
+    reserves: false,
+    attackTicks: 24,
+    muzzleX: 10,
+    muzzleY: -20,
+  },
+};
+
+/** Left-to-right, top-to-bottom order of the six family cards. */
+export const CARD_ORDER: readonly DefenderId[] = [
+  "grandma",
+  "grandpa",
+  "muscle",
+  "tinker",
+  "auntie",
+  "kid",
+];
+
+/**
+ * Demolition crew stats from `src/attacker/Enemy1.as` and its five subclasses.
+ * Speeds are pixels per 30 Hz tick; ranges are pixels from the house.
+ */
+export const ENEMIES: Record<EnemyId, EnemyDef> = {
+  grunt: {
+    id: "grunt",
+    name: "Knife Thug",
+    hp: 25,
+    speed: 1,
+    money: 10,
+    range: 20,
+    rangeJitter: 5,
+    attack: 1,
+  },
+  brute: {
+    id: "brute",
+    name: "Sledge Brute",
+    hp: 50,
+    speed: 0.8,
+    money: 15,
+    range: 20,
+    rangeJitter: 5,
+    attack: 1,
+  },
+  worker: {
+    id: "worker",
+    name: "Shovel Hand",
+    hp: 75,
+    speed: 1,
+    money: 20,
+    range: 20,
+    rangeJitter: 5,
+    attack: 1,
+  },
+  biker: {
+    id: "biker",
+    name: "Crate Biker",
+    hp: 120,
+    speed: 1.5,
+    money: 25,
+    range: 50,
+    rangeJitter: 0,
+    attack: 1,
+  },
+  breaker: {
+    id: "breaker",
+    name: "Jackhammer",
+    hp: 200,
+    speed: 0.6,
+    money: 30,
+    range: 60,
+    rangeJitter: 0,
+    attack: 1,
+  },
+  excavator: {
+    id: "excavator",
+    name: "Wrecking Ball",
+    hp: 400,
+    speed: 0.6,
+    money: 35,
+    range: 90,
+    rangeJitter: 0,
+    attack: 1,
+  },
+};
+
+export function isDefenderId(value: string): value is DefenderId {
+  return value in DEFENDERS;
+}
