@@ -7,9 +7,11 @@ change.
 
 ## Project
 
-A web game museum: classic Flash-era browser games, recreated so they can be
-played again, on a platform inspired by sites like 4399. It will be hosted at
-games.pufanyi.com. The architecture is in
+A collection of fun, original browser games, inspired by the immediacy and
+variety of sites like 4399. Familiar genres are a starting point; fidelity to
+existing games is not a goal. Prefer clear rules, satisfying choices, and simple
+code over reproducing historical mechanics or implementation details. It will be
+hosted at games.pufanyi.com. The architecture is in
 [`docs/architecture.md`](docs/architecture.md); read it before changing how the
 platform and games fit together.
 
@@ -143,10 +145,27 @@ that line too (and vice versa).
 | Gold Miner   | v1: single-player complete; multiplayer not started                 | `games/gold-miner/DESIGN.md`   |
 | Billiards    | Single-player complete; two-player not started                      | `games/billiards/DESIGN.md`    |
 | Bomb It 3    | Four modes and local two-player; fidelity gaps documented           | `games/bomb-it-3/DESIGN.md`    |
-| Nail House   | v1: seven stages, six-card shop, endless stage 7 complete           | `games/nail-house/DESIGN.md`   |
+| Nail House   | Seven stages, six family cards, fixed enemy routes and attacks      | —                              |
 | Kingdom Rush | All 17 stages and 3 modes; tower and enemy abilities partly missing | `games/kingdom-rush/DESIGN.md` |
 
 ## Coding standard
+
+### Nail House module guide
+
+- `game/sim.ts`: game creation, tick order, healing, and win/loss transitions.
+- `game/combat.ts`: targeting, attacks, projectiles, damage, and burning areas.
+- `game/shop.ts`: card availability, purchases, and upgrades.
+- `game/waves.ts`: wave timing and enemy entrances.
+- `game/effects.ts`: floating text and expanding rings; drawing stays in
+  `rendering/`.
+- `game/catalog.ts`, `config.ts`, and `levels.ts`: balance and layout data.
+- `runtime/session.ts`: menus, sound events, and saved progress around the game.
+
+Nail House uses no random numbers or seeds. Enemies cycle through configured
+entrances and weapons aim at fixed points with movement prediction. Tune these
+rules for enjoyable play; do not add compatibility with an older game's code.
+Stage seven is survival with long finite waves (999 of each enemy type), not
+unlimited spawning.
 
 ### Platform (`platform/`)
 

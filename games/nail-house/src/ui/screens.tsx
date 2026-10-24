@@ -44,7 +44,7 @@ export function TitleScreen(
   return (
     <div className="nh-overlay nh-title">
       <div className="nh-title-card">
-        <p className="nh-kicker">A Flash-era tower defence, rebuilt</p>
+        <p className="nh-kicker">Four windows. Six defenders. One house.</p>
         <h1>
           NAIL HOUSE
           <span>vs. the Demolition Crew</span>
@@ -394,7 +394,7 @@ export function HelpScreen({ onClose }: { onClose: () => void }) {
                 <strong>{def.name}</strong>
                 <span>{def.role}</span>
                 <span>
-                  {def.power[0]}-{def.power[4]} damage · range {def.range[0]}
+                  {def.power[0]}-{def.power[4]} damage · range {def.range}
                 </span>
                 <span>
                   Upgrades: ${def.cost[1]} / ${def.cost[2]} / ${def.cost[3]} /
@@ -417,8 +417,7 @@ export function HelpScreen({ onClose }: { onClose: () => void }) {
         </div>
         <p className="nh-muted">
           The vine is worth {LEAF.clicksForHeal}{" "}
-          taps per point. The original game was a 4399 Flash title; this is an
-          original-code recreation.
+          taps per point. Try different family combinations to hold the house.
         </p>
         <button
           type="button"

@@ -1,5 +1,3 @@
-import type { Rng } from "./rng.ts";
-
 export type DefenderId =
   | "grandma"
   | "grandpa"
@@ -55,17 +53,15 @@ export interface DefenderDef {
   power: readonly number[];
   /** Seconds between attacks at levels 1-5. */
   interval: readonly number[];
-  /** Horizontal targeting range at levels 1-5. */
-  range: readonly number[];
-  /** Weapon upgrade effect, 0-4. */
-  effect: readonly number[];
+  /** Furthest enemy x-coordinate the defender can target. */
+  range: number;
   /** Deploy plus four upgrade prices. */
   cost: readonly [number, number, number, number, number];
   /** Whether launching the weapon reserves damage on the target. */
   reserves: boolean;
   /** Duration of the attack pose, in ticks. */
   attackTicks: number;
-  /** The original used a different muzzle offset for the rifle. */
+  /** Launch position relative to the window. */
   muzzleX: number;
   muzzleY: number;
 }
@@ -80,13 +76,6 @@ export interface EnemyDef {
   money: number;
   /** Distance from the house where this enemy stops. */
   range: number;
-  /**
-   * The first three enemies randomize their stop distance by a few pixels;
-   * later enemies keep a fixed range.
-   */
-  rangeJitter: number;
-  /** The damage the enemy does on each attack. */
-  attack: number;
 }
 
 export interface WaveSpec {
@@ -119,8 +108,6 @@ export interface EnemyState {
   type: EnemyId;
   x: number;
   y: number;
-  targetX: number;
-  targetY: number;
   vx: number;
   vy: number;
   range: number;
@@ -134,8 +121,6 @@ export interface EnemyState {
   attackCd: number;
   /** Ticks since death, or -1 while alive. */
   death: number;
-  /** Cosmetic per-enemy seed for walk cycles and posture. */
-  seed: number;
 }
 
 export interface ProjectileState {
@@ -191,7 +176,6 @@ export interface FloaterState {
 }
 
 export interface GameState {
-  seed: number;
   level: number;
   survival: boolean;
   tick: number;
@@ -207,7 +191,6 @@ export interface GameState {
   waves: WaveState[];
   spawns: number;
   kills: number;
-  spent: number;
   /** Ticks of house shaking after a hit. */
   shake: number;
   leafClicks: number;
@@ -217,6 +200,4 @@ export interface GameState {
   nextId: number;
   /** Sounds generated since the session last drained this list. */
   events: SoundName[];
-  /** Seeded jitter for spawns, shots, and visual variation. */
-  rng: Rng;
 }

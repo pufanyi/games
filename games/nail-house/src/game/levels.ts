@@ -9,10 +9,8 @@ export interface LevelSpec {
 }
 
 /**
- * Wave tables from `src/Game.as`. `interval` shrinks by one tick after every
- * spawn until it reaches `min`, which is why later waves arrive faster than
- * their starting interval. The seventh level is the original's endless
- * survival mode: 999 of every enemy type.
+ * Each enemy group arrives faster over time until its minimum interval.
+ * Stage seven uses long survival waves with 999 enemies of each type.
  */
 export const LEVELS: readonly LevelSpec[] = [
   {

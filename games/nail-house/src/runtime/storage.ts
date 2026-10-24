@@ -1,5 +1,5 @@
 // Progress and preferences in localStorage; blocked storage falls back to
-// defaults. The original kept the unlocked stage in a Flash SharedObject.
+// defaults.
 
 const UNLOCKED_KEY = "nail-house:unlocked";
 const MUTED_KEY = "nail-house:muted";

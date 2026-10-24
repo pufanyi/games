@@ -1,16 +1,10 @@
 // Session state shared by the loop, the canvas, and the React screens. React
 // only sees a small `View` that changes on transitions, never every tick.
 import { CARD_ORDER, DEFENDERS } from "../game/catalog.ts";
-import { MAX_LEVEL } from "../game/config.ts";
-import { levelSpec } from "../game/levels.ts";
-import { randomSeed } from "../game/rng.ts";
-import {
-  cardState,
-  createGame,
-  purchase,
-  step,
-  tapLeaf as tapVine,
-} from "../game/sim.ts";
+import { LEAF, TICK_RATE } from "../game/config.ts";
+import { LEVELS, levelSpec } from "../game/levels.ts";
+import { type CardState, cardState, purchase } from "../game/shop.ts";
+import { createGame, step, tapLeaf as tapVine } from "../game/sim.ts";
 import type { DefenderId, GameState } from "../game/types.ts";
 import { play, setMuted, unlock } from "./audio.ts";
 import { loadMuted, loadUnlocked, saveMuted, saveUnlocked } from "./storage.ts";
@@ -29,16 +23,10 @@ export interface Session {
   scored: boolean;
 }
 
-export interface CardView {
+export interface CardView extends CardState {
   type: DefenderId;
   name: string;
   role: string;
-  level: number;
-  cost: number;
-  deployed: boolean;
-  affordable: boolean;
-  maxed: boolean;
-  blocked: boolean;
 }
 
 export interface View {
@@ -70,7 +58,7 @@ export function createSession(): Session {
     paused: false,
     muted,
     unlocked: loadUnlocked(),
-    game: createGame(1, randomSeed()),
+    game: createGame(1),
     newUnlock: false,
     scored: false,
   };
@@ -93,10 +81,10 @@ export function viewOf(session: Session): View {
     kills: game.kills,
     spawns: game.spawns,
     total: game.waves.reduce((sum, wave) => sum + wave.count, 0),
-    seconds: Math.floor(game.tick / 30),
+    seconds: Math.floor(game.tick / TICK_RATE),
     newUnlock: session.newUnlock,
     leafClicks: game.leafClicks,
-    leafNeeded: 10,
+    leafNeeded: LEAF.clicksForHeal,
     cards: CARD_ORDER.map((type) => {
       const def = DEFENDERS[type];
       const card = cardState(game, type);
@@ -104,12 +92,7 @@ export function viewOf(session: Session): View {
         type,
         name: def.name,
         role: def.role,
-        level: card.level,
-        cost: card.cost,
-        deployed: card.deployed,
-        affordable: card.affordable,
-        maxed: card.maxed,
-        blocked: card.blocked,
+        ...card,
       };
     }),
   };
@@ -127,7 +110,7 @@ export function isPlaying(session: Session): boolean {
 export function startLevel(session: Session, level: number): void {
   if (level < 1 || level > session.unlocked) return;
   unlock();
-  session.game = createGame(level, randomSeed());
+  session.game = createGame(level);
   session.screen = "game";
   session.paused = false;
   session.newUnlock = false;
@@ -135,13 +118,9 @@ export function startLevel(session: Session, level: number): void {
   play("click");
 }
 
-export function retry(session: Session): void {
-  startLevel(session, session.game.level);
-}
-
 export function nextLevel(session: Session): void {
   const next = session.game.level + 1;
-  if (next <= session.unlocked && next <= MAX_LEVEL) {
+  if (next <= session.unlocked && next <= LEVELS.length) {
     startLevel(session, next);
     return;
   }
@@ -193,7 +172,7 @@ export function tick(session: Session): void {
     session.scored = true;
     if (
       session.game.level === session.unlocked &&
-      session.unlocked < MAX_LEVEL
+      session.unlocked < LEVELS.length
     ) {
       session.unlocked++;
       saveUnlocked(session.unlocked);
