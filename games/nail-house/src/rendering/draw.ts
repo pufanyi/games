@@ -1,5 +1,5 @@
 // Frame composer. Rendering only reads the simulation state.
-import { DEATH_TICKS } from "../game/sim.ts";
+import { DEATH_TICKS } from "../game/config.ts";
 import type { EnemyId, EnemyState, GameState } from "../game/types.ts";
 import { drawEnemy } from "./actors.ts";
 import { drawFire, drawFloater, drawProjectile, drawRing } from "./effects.ts";
@@ -110,8 +110,6 @@ export function drawIdle(ctx: Ctx, state: GameState, time: number): void {
         type: i === 0 ? "worker" : "brute",
         x,
         y,
-        targetX: x,
-        targetY: y,
         vx: 0,
         vy: 0,
         range: 0,
@@ -123,7 +121,6 @@ export function drawIdle(ctx: Ctx, state: GameState, time: number): void {
         attacking: false,
         attackCd: 30,
         death: -1,
-        seed: 0.3 + i * 0.4,
       },
       Math.round(time * 30) + i * 9,
     );

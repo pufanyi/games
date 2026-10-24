@@ -1,15 +1,16 @@
 import { assert, assertEquals } from "@std/assert";
 import { ENEMIES } from "./catalog.ts";
 import { LEAF, MAX_HP } from "./config.ts";
-import { aliveCount, createGame, purchase, step, tapLeaf } from "./sim.ts";
+import { cardState, purchase } from "./shop.ts";
+import { createGame, step, tapLeaf } from "./sim.ts";
 import type { EnemyState, GameState } from "./types.ts";
 
 /**
  * A quiet stage with no waves, so a test can place its own enemies and watch
  * one weapon at a time. Survival mode turns off the win countdown.
  */
-function arena(seed = 7): GameState {
-  const state = createGame(1, seed);
+function arena(): GameState {
+  const state = createGame(1);
   state.waves = [];
   state.survival = true;
   state.spawns = 1;
@@ -27,8 +28,6 @@ function addEnemy(
     type: "grunt",
     x,
     y,
-    targetX: 120,
-    targetY: 355,
     vx: -1,
     vy: 0,
     range: 20,
@@ -40,7 +39,6 @@ function addEnemy(
     attacking: false,
     attackCd: 30,
     death: -1,
-    seed: 0.5,
   };
   state.enemies.push(enemy);
   return enemy;
@@ -50,63 +48,24 @@ function run(state: GameState, ticks: number) {
   for (let i = 0; i < ticks; i++) step(state);
 }
 
-Deno.test("the same seed produces the same wave timing", () => {
-  const a = createGame(3, 99);
-  const b = createGame(3, 99);
-  run(a, 400);
-  run(b, 400);
-  assertEquals(
-    a.enemies.map((
-      enemy,
-    ) => [enemy.type, Math.round(enemy.x), Math.round(enemy.y)]),
-    b.enemies.map((
-      enemy,
-    ) => [enemy.type, Math.round(enemy.x), Math.round(enemy.y)]),
-  );
+Deno.test("restarting a stage repeats the same fight for the same purchases", () => {
+  const first = createGame(3);
+  const retry = createGame(3);
+  for (const state of [first, retry]) {
+    purchase(state, "grandma");
+    run(state, 900);
+    if (cardState(state, "grandma").affordable) purchase(state, "grandma");
+    run(state, 300);
+  }
+  assert(first.kills > 0);
+  assertEquals(retry, first);
 });
 
 Deno.test("the first enemy of the first wave appears one tick in", () => {
-  const state = createGame(1, 1);
+  const state = createGame(1);
   step(state);
   assertEquals(state.enemies.length, 1);
   assertEquals(state.spawns, 1);
-});
-
-Deno.test("deploying costs 100 and fills a slot", () => {
-  const state = arena();
-  state.money = 100;
-  assert(purchase(state, "grandma"));
-  assertEquals(state.money, 0);
-  assertEquals(state.defenders.length, 1);
-  assertEquals(state.defenders[0].type, "grandma");
-  assertEquals(state.defenders[0].level, 1);
-  assertEquals(state.defenders[0].slot, 0);
-  assert(!purchase(state, "grandpa"), "no money for a second member");
-  assertEquals(state.defenders.length, 1);
-});
-
-Deno.test("the house holds four family members", () => {
-  const state = arena();
-  state.money = 10_000;
-  for (const type of ["grandma", "grandpa", "muscle", "tinker"] as const) {
-    assert(purchase(state, type));
-  }
-  assertEquals(state.defenders.map((defender) => defender.slot), [0, 1, 2, 3]);
-  assert(!purchase(state, "auntie"));
-  assertEquals(state.defenders.length, 4);
-});
-
-Deno.test("upgrading keeps the same defender and charges the next price", () => {
-  const state = arena();
-  state.money = 10_000;
-  purchase(state, "grandma");
-  const before = state.defenders[0];
-  assert(purchase(state, "grandma"));
-  assertEquals(state.defenders[0].level, 2);
-  assertEquals(state.defenders[0].id, before.id);
-  assertEquals(state.money, 10_000 - 100 - 200);
-  state.money = 0;
-  assert(!purchase(state, "grandma"));
 });
 
 Deno.test("a rifle shot hits its target after the tracer lands", () => {
@@ -198,7 +157,7 @@ Deno.test("the house falls when hit points run out", () => {
 });
 
 Deno.test("a cleared stage is won after the one second grace period", () => {
-  const state = createGame(1, 1);
+  const state = createGame(1);
   state.waves = [];
   state.spawns = 1;
   run(state, 10);
@@ -208,7 +167,7 @@ Deno.test("a cleared stage is won after the one second grace period", () => {
 });
 
 Deno.test("survival mode never declares a win", () => {
-  const state = createGame(7, 1);
+  const state = createGame(7);
   state.waves = [];
   state.spawns = 1;
   run(state, 200);
@@ -238,7 +197,7 @@ Deno.test("killing an enemy pays its bounty and counts the kill", () => {
   assertEquals(enemy.alive, false);
   assertEquals(state.money, 0 + ENEMIES.grunt.money);
   assertEquals(state.kills, 1);
-  assertEquals(aliveCount(state), 0);
+  assertEquals(state.enemies.filter((enemy) => enemy.alive).length, 0);
   // The body stays for the death pose, then disappears.
   assert(state.enemies.includes(enemy));
   run(state, 60);

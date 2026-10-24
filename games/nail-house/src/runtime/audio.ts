@@ -47,31 +47,26 @@ function tone(freq: number, duration: number, options: ToneOptions = {}): void {
   osc.stop(start + duration);
 }
 
-function noise(
+function burst(
   duration: number,
   options: { cutoff?: number; volume?: number; delay?: number } = {},
 ): void {
   if (!ctx || !master) return;
   const { cutoff = 1200, volume = 0.3, delay = 0 } = options;
   const start = ctx.currentTime + delay;
-  const buffer = ctx.createBuffer(
-    1,
-    Math.max(1, Math.floor(ctx.sampleRate * duration)),
-    ctx.sampleRate,
-  );
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) ** 2;
-  }
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
+  const source = ctx.createOscillator();
+  source.type = "sawtooth";
+  source.frequency.setValueAtTime(180, start);
+  source.frequency.exponentialRampToValueAtTime(40, start + duration);
   const filter = ctx.createBiquadFilter();
   filter.type = "lowpass";
   filter.frequency.value = cutoff;
   const gain = ctx.createGain();
-  gain.gain.value = volume;
+  gain.gain.setValueAtTime(volume, start);
+  gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
   source.connect(filter).connect(gain).connect(master);
   source.start(start);
+  source.stop(start + duration);
 }
 
 /** Play one of the simulation's sound events, throttled per name. */
@@ -106,11 +101,11 @@ export function play(name: SoundName): void {
       tone(990, 0.2, { type: "sine", delay: 0.1 });
       break;
     case "slipper":
-      noise(0.12, { cutoff: 2400, volume: 0.12 });
+      burst(0.12, { cutoff: 2400, volume: 0.12 });
       tone(300, 0.08, { type: "triangle", slideTo: 520, volume: 0.06 });
       break;
     case "rifle":
-      noise(0.16, { cutoff: 3600, volume: 0.3 });
+      burst(0.16, { cutoff: 3600, volume: 0.3 });
       tone(180, 0.09, { type: "square", slideTo: 90, volume: 0.1 });
       break;
     case "dumbbell":
@@ -120,21 +115,21 @@ export function play(name: SoundName): void {
       tone(520, 0.1, { type: "triangle", volume: 0.12, slideTo: 220 });
       break;
     case "bottle":
-      noise(0.1, { cutoff: 3000, volume: 0.16 });
+      burst(0.1, { cutoff: 3000, volume: 0.16 });
       tone(900, 0.1, { type: "triangle", volume: 0.08, slideTo: 500 });
       break;
     case "cracker":
-      noise(0.28, { cutoff: 5200, volume: 0.32 });
+      burst(0.28, { cutoff: 5200, volume: 0.32 });
       break;
     case "impact":
-      noise(0.09, { cutoff: 700, volume: 0.16 });
+      burst(0.09, { cutoff: 700, volume: 0.16 });
       break;
     case "burn":
-      noise(0.14, { cutoff: 1400, volume: 0.1 });
+      burst(0.14, { cutoff: 1400, volume: 0.1 });
       break;
     case "house-hit":
       tone(96, 0.2, { type: "square", volume: 0.18, slideTo: 54 });
-      noise(0.12, { cutoff: 500, volume: 0.2 });
+      burst(0.12, { cutoff: 500, volume: 0.2 });
       break;
     case "death":
       tone(300, 0.22, { type: "triangle", volume: 0.1, slideTo: 110 });

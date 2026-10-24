@@ -240,9 +240,9 @@ export function drawDefender(
 }
 
 export function drawEnemy(ctx: Ctx, enemy: EnemyState, tick: number): void {
-  const wobble = Math.sin((tick + enemy.seed * 40) * 0.35) * 1.6;
+  const wobble = Math.sin((tick + enemy.id * 7) * 0.35) * 1.6;
   const attackBob = enemy.attacking
-    ? Math.sin((tick + enemy.seed * 20) * 0.9) * 2
+    ? Math.sin((tick + enemy.id * 5) * 0.9) * 2
     : 0;
   ctx.save();
   ctx.translate(0, wobble + attackBob);

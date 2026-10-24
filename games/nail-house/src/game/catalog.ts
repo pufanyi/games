@@ -8,8 +8,7 @@ export const DEFENDERS: Record<DefenderId, DefenderDef> = {
     weapon: "slipper",
     power: [10, 20, 30, 40, 50],
     interval: [0.9, 0.9, 0.9, 0.9, 0.9],
-    range: [400, 400, 400, 400, 400],
-    effect: [0, 1, 2, 3, 4],
+    range: 400,
     cost: [100, 200, 250, 350, 400],
     reserves: true,
     attackTicks: 15,
@@ -23,8 +22,7 @@ export const DEFENDERS: Record<DefenderId, DefenderDef> = {
     weapon: "rifle",
     power: [22, 44, 66, 88, 110],
     interval: [2, 2, 2, 2, 2],
-    range: [500, 500, 500, 500, 500],
-    effect: [0, 1, 2, 3, 4],
+    range: 500,
     cost: [100, 200, 250, 350, 400],
     reserves: false,
     attackTicks: 15,
@@ -38,8 +36,7 @@ export const DEFENDERS: Record<DefenderId, DefenderDef> = {
     weapon: "dumbbell",
     power: [25, 50, 75, 120, 200],
     interval: [3, 3, 3, 3, 3],
-    range: [400, 400, 400, 400, 400],
-    effect: [0, 1, 2, 3, 4],
+    range: 400,
     cost: [100, 200, 250, 350, 400],
     reserves: true,
     attackTicks: 23,
@@ -53,8 +50,7 @@ export const DEFENDERS: Record<DefenderId, DefenderDef> = {
     weapon: "catapult",
     power: [4, 8, 12, 16, 20],
     interval: [0.4, 0.4, 0.4, 0.4, 0.4],
-    range: [450, 450, 450, 450, 450],
-    effect: [0, 1, 2, 3, 4],
+    range: 450,
     cost: [100, 200, 250, 350, 400],
     reserves: true,
     attackTicks: 24,
@@ -68,8 +64,7 @@ export const DEFENDERS: Record<DefenderId, DefenderDef> = {
     weapon: "bottle",
     power: [2, 4, 6, 8, 10],
     interval: [3, 2.95, 2.9, 2.85, 2.8],
-    range: [400, 400, 400, 400, 400],
-    effect: [0, 1, 2, 3, 4],
+    range: 400,
     cost: [100, 200, 250, 350, 400],
     reserves: false,
     attackTicks: 21,
@@ -83,8 +78,7 @@ export const DEFENDERS: Record<DefenderId, DefenderDef> = {
     weapon: "cracker",
     power: [10, 20, 30, 40, 50],
     interval: [3, 2.9, 2.8, 2.7, 2.6],
-    range: [400, 400, 400, 400, 400],
-    effect: [0, 1, 2, 3, 4],
+    range: 400,
     cost: [100, 200, 250, 350, 400],
     reserves: false,
     attackTicks: 24,
@@ -103,10 +97,7 @@ export const CARD_ORDER: readonly DefenderId[] = [
   "kid",
 ];
 
-/**
- * Demolition crew stats from `src/attacker/Enemy1.as` and its five subclasses.
- * Speeds are pixels per 30 Hz tick; ranges are pixels from the house.
- */
+/** Speeds are pixels per tick; ranges are stopping distances from the house. */
 export const ENEMIES: Record<EnemyId, EnemyDef> = {
   grunt: {
     id: "grunt",
@@ -115,8 +106,6 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     speed: 1,
     money: 10,
     range: 20,
-    rangeJitter: 5,
-    attack: 1,
   },
   brute: {
     id: "brute",
@@ -125,8 +114,6 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     speed: 0.8,
     money: 15,
     range: 20,
-    rangeJitter: 5,
-    attack: 1,
   },
   worker: {
     id: "worker",
@@ -135,8 +122,6 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     speed: 1,
     money: 20,
     range: 20,
-    rangeJitter: 5,
-    attack: 1,
   },
   biker: {
     id: "biker",
@@ -145,8 +130,6 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     speed: 1.5,
     money: 25,
     range: 50,
-    rangeJitter: 0,
-    attack: 1,
   },
   breaker: {
     id: "breaker",
@@ -155,8 +138,6 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     speed: 0.6,
     money: 30,
     range: 60,
-    rangeJitter: 0,
-    attack: 1,
   },
   excavator: {
     id: "excavator",
@@ -165,11 +146,5 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     speed: 0.6,
     money: 35,
     range: 90,
-    rangeJitter: 0,
-    attack: 1,
   },
 };
-
-export function isDefenderId(value: string): value is DefenderId {
-  return value in DEFENDERS;
-}

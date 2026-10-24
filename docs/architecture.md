@@ -1,9 +1,11 @@
-# Web Game Museum — Architecture Draft
+# Browser Games — Architecture Draft
 
 ## Overview
 
-A browser-based platform for preserving and recreating classic web games,
-inspired by sites like 4399.
+A platform for creating fun, original browser games, inspired by the accessible
+play and variety of sites like 4399. Existing games can inspire a genre or
+theme; reproducing their mechanics, balance, or implementation is not a
+requirement.
 
 The platform will be hosted at **games.pufanyi.com**.
 
