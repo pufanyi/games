@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertStringIncludes } from "@std/assert";
+import { assert, assertStringIncludes } from "@std/assert";
 import { renderToStaticMarkup } from "react-dom/server";
 import { GameOverScreen, ShopScreen } from "./screens.tsx";
 import type { View } from "../runtime/session.ts";
@@ -15,8 +15,7 @@ function view(overrides: Partial<View> = {}): View {
     money: 300,
     goal: 1195,
     nextGoal: 2010,
-    sticks: 0,
-    canDynamite: false,
+    dynamite: 0,
     offers: [],
     best: null,
     newBest: false,
@@ -31,17 +30,14 @@ function buttonWith(html: string, text: string): string {
   return button;
 }
 
-Deno.test("shop lists stocked slots and leaves out-of-stock slots empty", () => {
+Deno.test("shop lists offers and disables what you can't buy", () => {
   const html = renderToStaticMarkup(
     <ShopScreen
       view={view({
-        // The five slots in display order, as the original panel places them.
         offers: [
-          { item: "dynamite", price: 40, available: true, sold: false },
-          { item: "strength", price: 0, available: false, sold: false },
-          { item: "clover", price: 30, available: true, sold: true },
-          { item: "book", price: 450, available: true, sold: false },
-          { item: "polish", price: 0, available: false, sold: false },
+          { item: "dynamite", price: 40, sold: false },
+          { item: "polish", price: 450, sold: false },
+          { item: "clover", price: 30, sold: true },
         ],
       })}
       onBuy={noop}
@@ -52,20 +48,15 @@ Deno.test("shop lists stocked slots and leaves out-of-stock slots empty", () => 
   assertStringIncludes(html, "$300");
   assertStringIncludes(html, "The next goal is $2010");
   assertStringIncludes(buttonWith(html, "Dynamite"), 'aria-disabled="false"');
-  // A slot without stock has no goods and no button at all.
-  assertEquals(html.includes("Strength drink"), false);
-  assertEquals(html.includes("Diamond polish"), false);
-  assertStringIncludes(html, 'class="offer empty"');
-  // Already bought.
+  // Too expensive, and already bought.
+  assertStringIncludes(
+    buttonWith(html, "Diamond polish"),
+    'aria-disabled="true"',
+  );
   assertStringIncludes(buttonWith(html, "Lucky clover"), "Sold");
   assertStringIncludes(
     buttonWith(html, "Lucky clover"),
     'aria-disabled="true"',
-  );
-  // The purse never blocks a purchase: the price can overdraw it.
-  assertStringIncludes(
-    buttonWith(html, "Rock collector"),
-    'aria-disabled="false"',
   );
   assertStringIncludes(html, "Start level 3");
 });

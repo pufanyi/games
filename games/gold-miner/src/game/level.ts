@@ -1,181 +1,109 @@
-// Level layouts: the original's 30 fixed mines, goals, and mystery-bag rolls.
-// Themes and variants were recovered from the root timeline; geometry lives in
-// layouts.ts as numeric data.
-import { randInt, type RngHolder } from "./rng.ts";
-import { ANIMAL, animalWorldX, FRAME_STEP } from "./original.ts";
-import { type Item, type Kind, KINDS, type Prize } from "./items.ts";
-import { LAYOUTS } from "./layouts.ts";
+// Seeded mine generation and cumulative level goals.
+import { chance, randFloat, randInt, random } from "./rng.ts";
 
-/** Cumulative money needed to clear `level`. */
-export function goalFor(level: number): number {
-  let goal = 650;
-  let addOn = 275;
-  for (let n = 1; n < level; n++) {
-    if (n <= 9) addOn += 270;
-    goal += addOn;
-  }
-  return goal;
-}
+import { BAG_WEIGHTS, HEIGHT, MINE_TOP, WIDTH } from "./config.ts";
+import { type Item, type Kind, KINDS } from "./items.ts";
 
-/**
- * Layout theme for a level. Levels 1-10 use themes 1-10; afterwards the
- * original wraps back to theme 4 and cycles 4-10.
- */
-export function themeFor(level: number): number {
-  return level <= 10 ? level : 4 + ((level - 4) % 7);
-}
-
-/** Which level bonuses are active while the mine is played. */
-export interface LevelBonuses {
-  clover: boolean;
-  rock: boolean;
-  diamond: boolean;
-}
-
-/** The bag's pre-rolled prize and weight, chosen when the level loads. */
-export function rollBag(
-  state: RngHolder,
-  clover: boolean,
-  stick: number,
-): { price: Prize; weight: number } {
-  let price: Prize;
-  const w2 = randInt(state, 1, 6);
-  if (clover) {
-    if (w2 <= 2) price = "power";
-    else if (w2 <= 4) {
-      price = stick <= 3 ? "dynamite" : randInt(state, 300, 599);
-    } else price = 700;
-  } else if (w2 <= 3) {
-    price = randInt(state, 1, 600);
-  } else if (w2 === 4) {
-    price = "power";
-  } else if (w2 === 5) {
-    price = stick <= 3 ? "dynamite" : randInt(state, 100, 199);
-  } else {
-    price = 800;
-  }
-
-  const roll = randInt(state, 1, 4);
-  let weight: number;
-  if (roll === 1) weight = randInt(state, 1, 9);
-  else if (roll === 2) weight = -randInt(state, 1, 5);
-  else if (roll === 3) weight = 9;
-  else weight = -1;
-
-  return { price, weight };
-}
-
-interface Loader extends RngHolder {
+interface Generator {
+  rng: number;
   nextId: number;
 }
 
-interface LoadedMine {
-  items: Item[];
-  theme: number;
-  variant: number;
+/** Cumulative money needed to clear `level`: 650, 1195, 2010, 3095, ... */
+export function goalFor(level: number): number {
+  let goal = 650;
+  for (let n = 2; n <= level; n++) goal += 545 + 270 * (n - 2);
+  return goal;
 }
 
-/** Builds a level's items from the recovered layout, rolling all prizes now. */
-export function loadMine(
-  state: Loader,
-  level: number,
-  bonuses: LevelBonuses,
-  stick: number,
-): LoadedMine {
-  const theme = themeFor(level);
-  const variant = randInt(state, 1, 3);
-  const layout = LAYOUTS[theme - 1][variant - 1];
-  const items = layout.map((entry) => {
-    const spec = KINDS[entry.kind];
-    let price: Prize = spec.value;
-    let weight = spec.weight;
+export function generateItems(state: Generator, level: number): Item[] {
+  const plan: { kind: Kind; minY: number }[] = [];
 
-    if (entry.kind === "diamond") price = bonuses.diamond ? 900 : 600;
-    else if (entry.kind === "pig") price = bonuses.diamond ? 902 : 602;
-    else if (entry.kind === "rockSmall" || entry.kind === "rockLarge") {
-      price = bonuses.rock ? spec.value * 3 : spec.value;
-    } else if (entry.kind === "bag") {
-      const bag = rollBag(state, bonuses.clover, stick);
-      price = bag.price;
-      weight = bag.weight;
+  // Provision a value budget; actual reachability also depends on time and layout.
+  const needed = goalFor(level) - (level > 1 ? goalFor(level - 1) : 0);
+  const budget = needed * 1.7 + 200;
+  let value = 0;
+  while (value < budget && plan.length < 18) {
+    const roll = random(state);
+    const diamondOdds = level === 1 ? 0 : Math.min(0.06 + 0.02 * level, 0.22);
+    let kind: Kind = "goldSmall";
+    let minY = 190;
+    if (roll < diamondOdds) {
+      kind = "diamond";
+      minY = 380;
+    } else if (roll < diamondOdds + 0.18) {
+      kind = "goldHuge";
+      minY = 340;
+    } else if (roll < diamondOdds + 0.3) {
+      kind = "goldLarge";
+      minY = 290;
+    } else if (roll < diamondOdds + 0.5) {
+      kind = "goldMedium";
+      minY = 230;
     }
-
-    const item: Item = {
-      id: state.nextId++,
-      kind: entry.kind,
-      x: entry.x,
-      y: entry.y,
-      weight,
-      price,
-      hitW: spec.hitW,
-      hitH: spec.hitH,
-      artW: spec.artW,
-      artH: spec.artH,
-    };
-    if (spec.animal) {
-      item.x = animalWorldX(entry.x, entry.facing, ANIMAL.startX);
-      item.animal = {
-        anchorX: entry.x,
-        facing: entry.facing,
-        localX: ANIMAL.startX,
-        phase: "left",
-        hold: 0,
-      };
-    }
-    return item;
-  });
-  return { items, theme, variant };
-}
-
-/** Walks every pig and mole one 60 Hz tick. */
-export function stepAnimals(items: Item[], state: RngHolder) {
-  for (const item of items) {
-    const animal = item.animal;
-    if (!animal) continue;
-    if (animal.hold > 0) {
-      animal.hold -= FRAME_STEP;
-      if (animal.hold <= 0) {
-        animal.hold = 0;
-        animal.phase = animal.phase === "left" ? "right" : "left";
-      }
-    } else if (animal.phase === "left") {
-      animal.localX -= ANIMAL.leftSpeed * FRAME_STEP;
-      if (animal.localX <= ANIMAL.leftEndX) {
-        animal.localX = ANIMAL.leftEndX;
-        animal.hold = randInt(
-          state,
-          ANIMAL.turnMinFrames,
-          ANIMAL.turnMaxFrames,
-        );
-      }
-    } else {
-      animal.localX += ANIMAL.rightSpeed * FRAME_STEP;
-      if (animal.localX >= ANIMAL.rightEndX) {
-        animal.localX = ANIMAL.rightEndX;
-        animal.hold = randInt(
-          state,
-          ANIMAL.turnMinFrames,
-          ANIMAL.turnMaxFrames,
-        );
-      }
-    }
-    item.x = animalWorldX(animal.anchorX, animal.facing, animal.localX);
+    plan.push({ kind, minY });
+    value += KINDS[kind].value;
   }
+
+  for (let i = 0; i < 3 + Math.min(level, 6); i++) {
+    plan.push({
+      kind: chance(state, 0.6) ? "rockSmall" : "rockLarge",
+      minY: 0,
+    });
+  }
+  const bags = randInt(state, 1, 2) + (level >= 3 ? 1 : 0);
+  for (let i = 0; i < bags; i++) plan.push({ kind: "bag", minY: 0 });
+  for (let i = randInt(state, 0, 2); i > 0; i--) {
+    plan.push({ kind: "bone", minY: 0 });
+  }
+  if (level >= 2) {
+    for (let i = randInt(state, 1, 2); i > 0; i--) {
+      plan.push({ kind: "tnt", minY: 260 });
+    }
+    for (let i = randInt(state, 1, Math.min(3, level)); i > 0; i--) {
+      plan.push({ kind: "mole", minY: 250 });
+    }
+  }
+
+  // Big things first, so they still find room.
+  plan.sort((a, b) => KINDS[b.kind].r - KINDS[a.kind].r);
+
+  const items: Item[] = [];
+  for (const { kind, minY } of plan) {
+    const item = place(state, items, kind, minY);
+    if (!item) continue;
+    if (kind === "bag") {
+      item.weight = BAG_WEIGHTS[randInt(state, 0, BAG_WEIGHTS.length - 1)];
+    }
+    if (kind === "mole") {
+      const speed = Math.min(40 + 10 * level, 90);
+      item.vx = chance(state, 0.5) ? speed : -speed;
+      item.minX = Math.max(30, item.x - 160);
+      item.maxX = Math.min(WIDTH - 30, item.x + 160);
+      item.carrying = level >= 3 && chance(state, 0.35);
+    }
+    items.push(item);
+  }
+  return items;
 }
 
-/** Kinds present in the original layouts, for documentation and tests. */
-export const LAYOUT_KINDS: readonly Kind[] = [
-  "goldSmall",
-  "goldMedium",
-  "goldLarge",
-  "goldHuge",
-  "rockSmall",
-  "rockLarge",
-  "diamond",
-  "pig",
-  "mole",
-  "bone",
-  "skull",
-  "tnt",
-  "bag",
-];
+/** Finds a spot for a new item that doesn't overlap existing ones. */
+function place(
+  state: Generator,
+  items: Item[],
+  kind: Kind,
+  minY: number,
+): Item | null {
+  const { r } = KINDS[kind];
+  const top = Math.max(minY, MINE_TOP) + r;
+  const bottom = HEIGHT - r - 10;
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const x = randFloat(state, r + 20, WIDTH - r - 20);
+    const y = randFloat(state, Math.min(top, bottom), bottom);
+    const clear = items.every(
+      (other) => Math.hypot(other.x - x, other.y - y) > other.r + r + 8,
+    );
+    if (clear) return { id: state.nextId++, kind, x, y, r };
+  }
+  return null;
+}
