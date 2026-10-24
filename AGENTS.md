@@ -73,7 +73,8 @@ platform/
   games.ts         game registry (slug, title, description, tags)
   game_builds.ts   where each game's published build comes from
   dev.ts           Vite dev-server plugin
-  styles.css       platform styles
+  styles.css       platform styles (Material Design 3 tokens + components)
+  fonts/           bundled Roboto Flex (latin, wght axis) + its OFL license
   app_test.tsx     routing tests with fake files
 games/<slug>/      one independent game per folder
   deno.json        the game's own tasks (dev, build) and dependencies
@@ -217,6 +218,14 @@ unlimited spawning.
 - Styling: plain CSS with custom properties on `:root` and a
   `prefers-color-scheme: dark` override; new UI uses those tokens and works at
   phone width (16px gutters, no horizontal scroll).
+- The platform follows **Material Design 3**, hand-rolled (no UI library):
+  `platform/styles.css` defines M3 `--md-sys-*` tokens (color, typescale, shape,
+  elevation, motion, state layers) and component classes named after the M3
+  component (`card`, `chip`, `segmented-button`, `search-bar`, `button-filled`,
+  ...). The color roles are the tonal-spot scheme that
+  `@material/material-color-utilities` generates from seed `#4f46e5`; regenerate
+  the whole set rather than editing single roles. Type is Roboto Flex. Games
+  keep their own look.
 - Third-party assets (fonts, images, sounds) need a license that allows
   redistribution, and are bundled with the game alongside their license file
   (e.g. `games/gold-miner/src/fonts/`), not loaded from a CDN, so games work
