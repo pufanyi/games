@@ -145,7 +145,7 @@ that line too (and vice versa).
 
 | Game       | Status                                                    | Design                       |
 | ---------- | --------------------------------------------------------- | ---------------------------- |
-| Gold Miner | v1: single-player complete; multiplayer not started       | `games/gold-miner/DESIGN.md` |
+| Gold Miner | v1 complete and calibrated; multiplayer not started       | `games/gold-miner/DESIGN.md` |
 | Billiards  | Single-player complete; two-player not started            | `games/billiards/DESIGN.md`  |
 | Bomb It 3  | Four modes and local two-player; fidelity gaps documented | `games/bomb-it-3/DESIGN.md`  |
 | Nail House | v1: seven stages, six-card shop, endless stage 7 complete | `games/nail-house/DESIGN.md` |
@@ -173,10 +173,17 @@ separately; do not call the recreation a pixel-identical port.
 
 ### Gold Miner source organization
 
-`games/gold-miner/src/` separates responsibilities:
+`games/gold-miner/` is a standalone Canvas 2D + React remake whose rules,
+geometry, and timing were read from the original file. Read its `DESIGN.md` and
+`CALIBRATION.md` before changing gameplay or fidelity claims. Original SWF
+files, decompiled scripts, and extracted assets are research inputs only and
+must not be included in published builds.
 
-- `game/`: deterministic simulation, level generation, item definitions, shared
-  tuning constants, shop rules, and seeded RNG. No browser or React imports.
+- `game/`: deterministic 60 Hz simulation, the 30 recovered layouts, item
+  definitions, shared tuning constants, shop rules, and seeded RNG. Recovered
+  original tables (clip timelines, swing rotation, blast boxes) live in
+  `original.ts`; `layouts.ts` holds the layouts as numeric world geometry. No
+  browser or React imports.
 - `rendering/`: Canvas drawing, scenery, the miner's camp, the claw, sprites,
   and painting helpers; reads game state without mutating it.
 - `runtime/`: browser session, audio, and local storage.
@@ -185,9 +192,10 @@ separately; do not call the recreation a pixel-identical port.
   rendering.
 - `fonts/`: bundled font and license; `main.tsx` is the browser entry point.
 
-Tests live beside their modules. See `games/gold-miner/CALIBRATION.md` for
-historical evidence, approximate tuning, and outstanding fidelity gaps. Do not
-present estimates as measured original-game constants.
+Tests live beside their modules and cover the measured tables, retract labels,
+payout timing, shop rolls, and timer behavior. `CALIBRATION.md` separates
+source-level evidence from approximations; do not present an estimate as a
+measured original-game constant.
 
 ### Billiards source organization
 
