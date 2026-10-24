@@ -1,5 +1,6 @@
 // Platform pages. Rendered to HTML on the server (app.tsx) and hydrated in the
-// browser (client.tsx) from the same props.
+// browser (client.tsx) from the same props. Styled as Material Design 3
+// components in plain CSS (styles.css); class names follow the M3 component.
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import type { Game } from "./games.ts";
 
@@ -95,20 +96,18 @@ function Catalog({ games }: { games: GameListing[] }) {
 
   return (
     <>
-      <header className="site-header">
+      <header className="top-app-bar top-app-bar-large">
         <div className="wrap">
-          <h1 className="site-title">Arcade</h1>
-          <p className="site-subtitle">
+          <h1 className="top-app-bar-headline">Arcade</h1>
+          <p className="top-app-bar-supporting">
             Classic browser games, rebuilt to play again.
-            <span className="count">
-              {`${playable} of ${games.length} playable`}
-            </span>
           </p>
+          <p className="count">{`${playable} of ${games.length} playable`}</p>
         </div>
       </header>
       <main className="wrap">
         <div className="toolbar">
-          <label className="search">
+          <label className="search-bar">
             <span className="visually-hidden">Search games</span>
             <input
               type="search"
@@ -118,12 +117,13 @@ function Catalog({ games }: { games: GameListing[] }) {
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          <fieldset className="view-toggle">
+          <fieldset className="segmented-button">
             <legend className="visually-hidden">Layout</legend>
             {(["grid", "list"] as const).map((option) => (
               <button
                 key={option}
                 type="button"
+                className="segment"
                 aria-pressed={view === option}
                 onClick={() => chooseView(option)}
               >
@@ -162,22 +162,22 @@ function GameCard({ game }: { game: GameListing }) {
   return (
     <li className="game">
       <a
-        className="game-link"
+        className="card state-layer"
         href={game.playable
           ? `/games/${encodeURIComponent(game.slug)}/`
           : `/play/${encodeURIComponent(game.slug)}`}
       >
         <Cover game={game} />
-        <div className="game-body">
-          <div className="game-heading">
-            <h2 className="game-title">{game.title}</h2>
+        <div className="card-body">
+          <div className="card-heading">
+            <h2 className="card-title">{game.title}</h2>
             {game.playable
-              ? <span className="badge badge-ready">Play</span>
-              : <span className="badge">Coming soon</span>}
+              ? <span className="status status-ready">Play</span>
+              : <span className="status">Coming soon</span>}
           </div>
-          <p className="game-description">{game.description}</p>
-          <ul className="tags" aria-label="Tags">
-            {game.tags.map((tag) => <li key={tag} className="tag">{tag}</li>)}
+          <p className="card-supporting">{game.description}</p>
+          <ul className="chips" aria-label="Tags">
+            {game.tags.map((tag) => <li key={tag} className="chip">{tag}</li>)}
           </ul>
         </div>
       </a>
@@ -187,27 +187,33 @@ function GameCard({ game }: { game: GameListing }) {
 
 function Play({ game }: { game: GameListing }) {
   return (
-    <main className="wrap play">
-      <header className="play-header">
-        <a className="back" href="/">← All games</a>
-        <h1 className="play-title">{game.title}</h1>
+    <>
+      <header className="top-app-bar">
+        <div className="wrap top-app-bar-row">
+          <a className="button button-text state-layer" href="/">
+            ← All games
+          </a>
+          <h1 className="top-app-bar-title">{game.title}</h1>
+        </div>
       </header>
-      <div className="notice">
+      <main className="wrap notice">
         <Cover game={game} large />
-        <h2>Coming soon</h2>
+        <h2 className="notice-headline">Coming soon</h2>
         <p>This game is not available yet. Check back soon.</p>
-      </div>
-      <p className="play-description">{game.description}</p>
-    </main>
+        <p>{game.description}</p>
+      </main>
+    </>
   );
 }
 
 function NotFound() {
   return (
     <main className="wrap notice">
-      <h1>Game not found</h1>
+      <h1 className="notice-headline">Game not found</h1>
       <p>There's no game at this address.</p>
-      <a className="back" href="/">← Back to all games</a>
+      <a className="button button-filled state-layer" href="/">
+        Back to all games
+      </a>
     </main>
   );
 }
