@@ -6,3 +6,6 @@ dist/
 
 # Original Flash files are research inputs only and never ship.
 *.swf
+
+# Local-only research material (original SWF assets); never published.
+games/kingdom-rush/reference/

@@ -485,6 +485,15 @@
           "npm:vite@8.3.4"
         ]
       },
+      "games/kingdom-rush": {
+        "dependencies": [
+          "jsr:@std/assert@1",
+          "npm:@vitejs/plugin-react@6.1.2",
+          "npm:react-dom@19.3.0",
+          "npm:react@19.3.0",
+          "npm:vite@8.3.4"
+        ]
+      },
       "games/nail-house": {
         "dependencies": [
           "jsr:@std/assert@1",
