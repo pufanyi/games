@@ -15,16 +15,8 @@ import {
 
 /** A dark hollow in the dirt behind an item that's still buried. */
 export function drawPocket(ctx: Ctx, item: Item) {
-  if (item.kind === "mole") {
-    // The tunnel it patrols.
-    const from = (item.minX ?? item.x) - item.r * 1.6;
-    const to = (item.maxX ?? item.x) + item.r * 1.6;
-    ctx.fillStyle = "rgb(35 15 0 / 0.26)";
-    ctx.beginPath();
-    ctx.roundRect(from, item.y - item.r * 0.95, to - from, item.r * 2, item.r);
-    ctx.fill();
-    return;
-  }
+  // Moles walk through open dirt; marking their patrol would give it away.
+  if (item.kind === "mole") return;
   ctx.fillStyle = "rgb(35 15 0 / 0.32)";
   ctx.beginPath();
   ctx.ellipse(
@@ -435,7 +427,7 @@ function drawTnt(ctx: Ctx, item: Item, tick: number) {
 }
 
 /**
- * A plump mole trundling along its tunnel: velvet fur, a pink star of a
+ * A plump mole trundling through the dirt: velvet fur, a pink star of a
  * snout, big digging paws, and eyes squeezed shut against the light.
  */
 function drawMole(ctx: Ctx, item: Item, tick: number) {

@@ -86,8 +86,8 @@ use the same `INK` outline). Keep new art consistent with it:
       canvases
 - [x] **Sprites** (`src/rendering/sprites.ts`): pitted gold with twinkles,
       chipped and cracked rocks, glowing cut diamonds, patched sacks, bones and
-      skulls, barrels of TNT with a lit fuse, and moles that trundle along their
-      tunnels; buried items sit in a darker pocket of dirt
+      skulls, barrels of TNT with a lit fuse, and moles that trundle back and
+      forth with no visible path; buried items sit in a darker pocket of dirt
 - [x] **Camp** (`src/rendering/camp.ts`): a plank deck over the shaft, a rope
       reel on two trestles whose coil grows as the rope comes in, and an ore
       cart whose heap of gold grows toward the level's goal
