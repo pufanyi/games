@@ -1,3 +1,4 @@
+import type { OnlineDriver, OnlineView } from "./online.ts";
 import type { Offer } from "../game/shop.ts";
 // Everything outside the simulation that the game loop and the screens share:
 // which screen is up, pause, queued inputs, and the best score. Plain TS so the
@@ -15,6 +16,7 @@ import {
 } from "./storage.ts";
 
 export interface Session {
+  online: OnlineDriver | null;
   /** "title" runs a demo game behind the title screen. */
   mode: "title" | "game";
   paused: boolean;
@@ -28,6 +30,8 @@ export interface Session {
 
 /** What the React screens show. Changes rarely, unlike the game state. */
 export interface View {
+  online?: OnlineView;
+  ready?: boolean[];
   mode: Session["mode"];
   paused: boolean;
   muted: boolean;
@@ -50,6 +54,7 @@ export function createSession(): Session {
   const muted = loadMuted();
   setMuted(muted);
   return {
+    online: null,
     mode: "title",
     paused: false,
     muted,
@@ -63,6 +68,8 @@ export function createSession(): Session {
 export function viewOf(s: Session): View {
   const { game } = s;
   return {
+    online: s.online ? structuredClone(s.online.view) : undefined,
+    ready: [...game.ready],
     mode: s.mode,
     paused: s.paused,
     muted: s.muted,
@@ -87,10 +94,18 @@ export function isPlaying(s: Session): boolean {
 }
 
 export function queue(s: Session, input: Input) {
+  if (s.online) {
+    s.online.input(input);
+    return;
+  }
   if (s.mode === "game" && !s.paused) s.queued.push(input);
 }
 
 export function start(s: Session) {
+  if (s.online) {
+    s.online.ready();
+    return;
+  }
   unlock();
   s.game = createGame(newSeed());
   s.mode = "game";
@@ -100,6 +115,9 @@ export function start(s: Session) {
 }
 
 export function quitToTitle(s: Session) {
+  s.online?.leave();
+  s.online = null;
+  s.queued = [];
   s.game = createGame(newSeed());
   s.mode = "title";
   s.paused = false;
@@ -107,6 +125,10 @@ export function quitToTitle(s: Session) {
 
 /** Pausing only applies while a level is being played. */
 export function setPaused(s: Session, paused: boolean) {
+  if (s.online) {
+    s.online.pause(paused);
+    return;
+  }
   if (s.mode === "game" && s.game.phase === "playing") s.paused = paused;
 }
 
@@ -119,6 +141,7 @@ export function toggleMuted(s: Session) {
 
 /** One fixed simulation tick, plus the sound and scoring around it. */
 export function tick(s: Session) {
+  if (s.online && !s.online.canStep()) return;
   if (s.mode === "title") {
     // The demo miner fires every couple of seconds.
     const fire = s.game.tick % 150 === 60;
@@ -131,7 +154,10 @@ export function tick(s: Session) {
   step(s.game, s.queued);
   s.queued = [];
   for (const event of s.game.events) play(event.type);
-  if (before !== "gameOver" && s.game.phase === "gameOver") recordBest(s);
+  s.online?.afterTick();
+  if (!s.online && before !== "gameOver" && s.game.phase === "gameOver") {
+    recordBest(s);
+  }
 }
 
 function recordBest(s: Session) {

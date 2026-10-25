@@ -41,13 +41,14 @@ platform and games fit together.
     `node:*` APIs so it still bundles.
   - `platform/dev.ts`: the Vite dev server.
 - Deploy: Cloudflare Workers Builds runs `npx wrangler deploy` on pushes to
-  `main` and `npx wrangler preview` on other branches (which is why
-  `wrangler.jsonc` keeps an empty `previews` block). Its `build.command` runs
-  `deno task build` first (through the `deno` npm package, since the build image
-  has no Deno). `dist/` is uploaded as Workers Static Assets; `run_worker_first`
-  sends every request through `worker.ts`, which reads files via the `ASSETS`
-  binding. `tsconfig.worker.json` only tells Wrangler's bundler how to compile
-  JSX. The Worker `name` must match the Worker in the Cloudflare dashboard.
+  `main` and `npx wrangler preview` on other branches. `wrangler.jsonc` declares
+  the room binding in both production and `previews`; Cloudflare isolates
+  Durable Object storage per preview. Its `build.command` runs `deno task build`
+  first (through the `deno` npm package, since the build image has no Deno).
+  `dist/` is uploaded as Workers Static Assets; `run_worker_first` sends every
+  request through `worker.ts`, which reads files via the `ASSETS` binding.
+  `tsconfig.worker.json` only tells Wrangler's bundler how to compile JSX. The
+  Worker `name` must match the Worker in the Cloudflare dashboard.
 - The Deno agent skill lives in `.agents/skills/deno` (symlinked into
   `.claude/skills/deno`, pinned in `skills-lock.json`). For version-accurate CLI
   details, prefer `deno <cmd> --help`.
@@ -79,6 +80,9 @@ platform/
 games/<slug>/      one independent game per folder
   deno.json        the game's own tasks (dev, build) and dependencies
   src/             game source; dist/ is its build (gitignored)
+multiplayer/
+  rooms.ts         optional Cloudflare two-seat WebSocket relay + room expiry
+  cloudflare.ts    narrow Workers API types and WebSocket upgrade boundary
 scripts/
   build_games.ts   publishes games to dist/games/<slug>/
 docs/
@@ -91,7 +95,10 @@ biome.json         Biome linter config
 .github/           CI workflow
 ```
 
-`dist/` (build output) and `node_modules/` are generated and gitignored.
+`dist/` (build output), `node_modules/`, and `.wrangler/` (local Worker state
+and generated runtime bundles) are generated and gitignored. Deno excludes
+`.wrangler/` so local Worker testing does not add generated middleware to
+checks.
 
 ## Commands
 
@@ -103,7 +110,7 @@ deno task build   # platform assets + published games into dist/
 deno task start   # serve dist/ with the Deno server (build first)
 deno task test    # tests
 deno task lint    # Biome lint; warnings fail too
-npx wrangler dev  # run the Cloudflare Worker locally (builds first; needs Node)
+npx wrangler dev  # Worker + online rooms locally (builds first; needs Node)
 npx wrangler deploy --dry-run   # check the Worker bundles and assets upload
 deno fmt --check && deno task lint && deno check && deno task build && deno task test   # = CI
 ```
@@ -143,13 +150,31 @@ that line too (and vice versa).
 
 | Game         | Status                                                              | Design                         |
 | ------------ | ------------------------------------------------------------------- | ------------------------------ |
-| Gold Miner   | v1: single-player complete; multiplayer not started                 | `games/gold-miner/DESIGN.md`   |
+| Gold Miner   | Single-player and online cooperative two-player complete            | `games/gold-miner/DESIGN.md`   |
 | Billiards    | Single-player complete; two-player not started                      | `games/billiards/DESIGN.md`    |
 | Bomb It 3    | Four modes and local two-player; fidelity gaps documented           | `games/bomb-it-3/DESIGN.md`    |
 | Nail House   | Seven stages, six family cards, fixed enemy routes and attacks      | —                              |
 | Kingdom Rush | All 17 stages and 3 modes; tower and enemy abilities partly missing | `games/kingdom-rush/DESIGN.md` |
 
 ## Coding standard
+
+### Online multiplayer
+
+- `multiplayer/rooms.ts` is a game-agnostic Cloudflare Durable Object relay,
+  exposed by `worker.ts` at `/api/multiplayer/rooms`. Only the Worker runtime
+  supports rooms; use `npx wrangler dev` for local online testing.
+- `wrangler.jsonc` declares the `ROOMS` binding and SQLite class migration.
+  Socket attachments survive hibernation; room credentials/deadlines live in
+  storage. Do not persist simulation snapshots on every tick.
+- Gold Miner's `runtime/online.ts` runs host/guest sessions;
+  `runtime/protocol.ts` validates commands/snapshots and interpolates rendering.
+  Host simulation is authoritative; guests never run scoring/collision logic.
+- Gold Miner co-op shares money, upgrades and dynamite. Both players ready
+  before start/replay and before the next level. Purchases clear readiness. Solo
+  high scores stay separate. Competitive mode is deferred.
+- Invitations contain a room ID, never a host credential. Credentials stay in
+  memory; reconnect retains a seat for 30 seconds, but page reload recovery and
+  host migration are not supported. Single-player must work without the API.
 
 ### Nail House module guide
 

@@ -1,4 +1,5 @@
 import { assertAlmostEquals, assertEquals } from "@std/assert";
+import { loadGuide, saveGuide } from "./storage.ts";
 import {
   aimAt,
   beginCharge,
@@ -125,8 +126,15 @@ Deno.test("cancelling a charge restores the strength set before it", () => {
 });
 
 Deno.test("the aim guide starts off and toggles", () => {
-  const session = createSession();
-  assertEquals(viewOf(session).guide, false);
-  toggleGuide(session);
-  assertEquals(viewOf(session).guide, true);
+  // Deno also persists localStorage; repeated test runs must not inherit a toggle.
+  const previous = loadGuide();
+  try {
+    saveGuide(false);
+    const session = createSession();
+    assertEquals(viewOf(session).guide, false);
+    toggleGuide(session);
+    assertEquals(viewOf(session).guide, true);
+  } finally {
+    saveGuide(previous);
+  }
 });

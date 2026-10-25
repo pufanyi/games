@@ -7,6 +7,7 @@
     "./games/kingdom-rush"
   ],
   "nodeModulesDir": "auto",
+  "exclude": [".wrangler/"],
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",

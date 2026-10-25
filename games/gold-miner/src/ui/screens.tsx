@@ -1,3 +1,4 @@
+import type { OnlineView } from "../runtime/online.ts";
 // The screens over the canvas: title, pause, shop, and game over, plus the
 // on-screen controls. They render from a `View` and report actions upward.
 import {
@@ -20,7 +21,7 @@ function bestText(view: View) {
  * A screen over the canvas. Like a modal dialog, it moves focus to its main
  * (`.primary`) button when it opens, so Enter or Space picks it.
  */
-function Panel(
+export function Panel(
   { label, className, children }: {
     label: string;
     className?: string;
@@ -47,7 +48,11 @@ function Panel(
 }
 
 export function TitleScreen(
-  { view, onPlay }: { view: View; onPlay: () => void },
+  { view, onPlay, onOnline }: {
+    view: View;
+    onPlay: () => void;
+    onOnline?: () => void;
+  },
 ) {
   const best = bestText(view);
   return (
@@ -71,21 +76,36 @@ export function TitleScreen(
         className="button primary"
         onClick={onPlay}
       >
-        Play
+        Play solo
       </button>
+      {onOnline && (
+        <button type="button" className="button" onClick={onOnline}>
+          Online co-op
+        </button>
+      )}
     </Panel>
   );
 }
 
 export function PauseScreen(
-  { onResume, onQuit }: { onResume: () => void; onQuit: () => void },
+  { onResume, onQuit, online }: {
+    onResume: () => void;
+    onQuit: () => void;
+    online?: OnlineView;
+  },
 ) {
   return (
     <Panel label="Paused">
       <h2>Paused</h2>
+      {online && (
+        <p role="status">
+          {online.message}. Resume when both players are back.
+        </p>
+      )}
       <button
         type="button"
         className="button primary"
+        disabled={online && (online.status !== "connected" || !online.peer)}
         onClick={onResume}
       >
         Resume
@@ -193,9 +213,15 @@ export function ShopScreen({
       <button
         type="button"
         className="button primary"
+        disabled={view.online &&
+          view.ready?.[view.online.role === "host" ? 0 : 1]}
         onClick={onContinue}
       >
-        Start level {view.level + 1}
+        {view.online
+          ? (view.ready?.[view.online.role === "host" ? 0 : 1]
+            ? "Ready — waiting for partner"
+            : `Ready for level ${view.level + 1}`)
+          : `Start level ${view.level + 1}`}
       </button>
     </Panel>
   );
@@ -210,7 +236,7 @@ export function GameOverScreen({
   onPlayAgain: () => void;
   onQuit: () => void;
 }) {
-  const best = bestText(view);
+  const best = view.online ? null : bestText(view);
   return (
     <Panel label="Game over">
       <h2>Game over</h2>
@@ -224,9 +250,14 @@ export function GameOverScreen({
       <button
         type="button"
         className="button primary"
+        disabled={view.online?.ready[view.online.role === "host" ? 0 : 1]}
         onClick={onPlayAgain}
       >
-        Play again
+        {view.online
+          ? (view.online.ready[view.online.role === "host" ? 0 : 1]
+            ? "Ready — waiting for partner"
+            : "Ready to play again")
+          : "Play again"}
       </button>
       <button type="button" className="button" onClick={onQuit}>
         Quit to title
