@@ -1,4 +1,4 @@
-import type { OnlineView } from "../runtime/online.ts";
+import { mySeat, type OnlineView, partnerOf } from "../runtime/online.ts";
 // The screens over the canvas: title, pause, shop, and game over, plus the
 // on-screen controls. They render from a `View` and report actions upward.
 import {
@@ -80,7 +80,7 @@ export function TitleScreen(
       </button>
       {onOnline && (
         <button type="button" className="button" onClick={onOnline}>
-          Online co-op
+          Play with a friend
         </button>
       )}
     </Panel>
@@ -88,30 +88,30 @@ export function TitleScreen(
 }
 
 export function PauseScreen(
-  { onResume, onQuit, online }: {
+  { onResume, onQuit, online, status }: {
     onResume: () => void;
     onQuit: () => void;
     online?: OnlineView;
+    /** What the partner is up to, in an online game. */
+    status?: string;
   },
 ) {
   return (
     <Panel label="Paused">
       <h2>Paused</h2>
-      {online && (
-        <p role="status">
-          {online.message}. Resume when both players are back.
-        </p>
-      )}
+      {status && <p role="status">{status}</p>}
       <button
         type="button"
         className="button primary"
-        disabled={online && (online.status !== "connected" || !online.peer)}
+        disabled={online &&
+          (online.status !== "connected" || !partnerOf(online) ||
+            online.stalled)}
         onClick={onResume}
       >
         Resume
       </button>
       <button type="button" className="button" onClick={onQuit}>
-        Quit to title
+        {online ? "Leave game" : "Quit to title"}
       </button>
     </Panel>
   );
@@ -210,20 +210,42 @@ export function ShopScreen({
         {`The next goal is $${view.nextGoal}; ` +
           "spending money here makes it harder to reach."}
       </p>
+      <ContinueButton view={view} onContinue={onContinue} />
+    </Panel>
+  );
+}
+
+/** Leaving the shop. Online, the level starts once both miners are ready. */
+function ContinueButton({ view, onContinue }: {
+  view: View;
+  onContinue: () => void;
+}) {
+  const next = `level ${view.level + 1}`;
+  if (!view.online) {
+    return (
+      <button type="button" className="button primary" onClick={onContinue}>
+        Start {next}
+      </button>
+    );
+  }
+  const seat = mySeat(view.online);
+  const ready = view.ready?.[seat] ?? false;
+  const partnerReady = view.ready?.[1 - seat] ?? false;
+  const name = view.online.partner || "your friend";
+  return (
+    <>
+      {partnerReady && !ready && (
+        <p className="highlight" role="status">{name} is ready to go!</p>
+      )}
       <button
         type="button"
         className="button primary"
-        disabled={view.online &&
-          view.ready?.[view.online.role === "host" ? 0 : 1]}
+        disabled={ready}
         onClick={onContinue}
       >
-        {view.online
-          ? (view.ready?.[view.online.role === "host" ? 0 : 1]
-            ? "Ready — waiting for partner"
-            : `Ready for level ${view.level + 1}`)
-          : `Start level ${view.level + 1}`}
+        {ready ? `Waiting for ${name}…` : `Ready for ${next}`}
       </button>
-    </Panel>
+    </>
   );
 }
 
@@ -241,7 +263,8 @@ export function GameOverScreen({
     <Panel label="Game over">
       <h2>Game over</h2>
       <p>
-        {`You missed the $${view.goal} goal on level ${view.level}, ` +
+        {`${view.online ? `You and ${view.online.partner}` : "You"} ` +
+          `missed the $${view.goal} goal on level ${view.level}, ` +
           `with $${view.money}.`}
       </p>
       {view.newBest
@@ -250,17 +273,13 @@ export function GameOverScreen({
       <button
         type="button"
         className="button primary"
-        disabled={view.online?.ready[view.online.role === "host" ? 0 : 1]}
+        disabled={view.online && !partnerOf(view.online)}
         onClick={onPlayAgain}
       >
-        {view.online
-          ? (view.online.ready[view.online.role === "host" ? 0 : 1]
-            ? "Ready — waiting for partner"
-            : "Ready to play again")
-          : "Play again"}
+        Play again
       </button>
       <button type="button" className="button" onClick={onQuit}>
-        Quit to title
+        {view.online ? "Leave game" : "Quit to title"}
       </button>
     </Panel>
   );

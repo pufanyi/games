@@ -325,7 +325,7 @@ Deno.test("co-op has two independent claws and one shared mine", () => {
   assertEquals(state.players.filter((p) => p.claw.item?.id === 1).length, 1);
 });
 
-Deno.test("co-op shop requires both players; purchases clear both ready flags", () => {
+Deno.test("co-op shop waits for both players; shopping keeps readiness", () => {
   const state = createGame(42, 2);
   state.phase = "shop";
   state.money = 1000;
@@ -334,11 +334,9 @@ Deno.test("co-op shop requires both players; purchases clear both ready flags", 
   assertEquals(state.phase, "shop");
   assertEquals(state.ready, [true, false]);
   step(state, [{ player: 1, action: "buy", item: "strength" }]);
-  assertEquals(state.ready, [false, false]);
+  assertEquals(state.ready, [true, false]);
   assertEquals(state.money, 900);
   step(state, [{ player: 1, action: "continue" }]);
-  assertEquals(state.phase, "shop");
-  step(state, [{ player: 0, action: "continue" }]);
   assertEquals(state.phase, "playing");
   assertEquals(state.level, 2);
   assertEquals(state.players.length, 2);

@@ -21,7 +21,7 @@ const DRUM_Y = PIVOT_Y - DRUM.r;
 /** Top of the planks the miner stands on. */
 export const DECK_Y = GROUND_Y - 13;
 /** Where the miner stands, right of the reel. */
-const MINER_DX = 58;
+export const MINER_DX = 58;
 /** The crank sits on the reel's right end and turns in depth, so it bobs. */
 const CRANK = { dx: DRUM.half + 9, r: 9 };
 

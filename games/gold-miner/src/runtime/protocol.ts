@@ -4,15 +4,27 @@ import type { GameState, Input } from "../game/sim.ts";
 
 export type Command =
   | { kind: "input"; input: Input; level: number; phase: GameState["phase"] }
-  | { kind: "ready" }
+  | { kind: "start" }
   | { kind: "visibility"; hidden: boolean }
   | { kind: "pause"; paused: boolean };
 export interface Snapshot {
   game: GameState;
   lobby: boolean;
-  ready: boolean[];
   paused: boolean;
   round: number;
+}
+/**
+ * The room relay's display-name rule (multiplayer/rooms.ts), repeated so the
+ * game can tidy a name before sending it instead of being disconnected.
+ */
+export function playerName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const name = value.replace(/\s+/g, " ").trim();
+  const length = [...name].length;
+  return length >= 1 && length <= 20 &&
+      !/[\p{Cc}\p{Cs}\p{Co}\p{Cn}]|(?!\u200d)\p{Cf}/u.test(name)
+    ? name
+    : null;
 }
 export function object(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -47,9 +59,7 @@ const events = new Set([
 export function isSnapshot(value: unknown): value is Snapshot {
   if (
     !object(value) || typeof value.lobby !== "boolean" ||
-    typeof value.paused !== "boolean" || !finite(value.round) ||
-    !Array.isArray(value.ready) || value.ready.length !== 2 ||
-    !value.ready.every((v) => typeof v === "boolean")
+    typeof value.paused !== "boolean" || !finite(value.round)
   ) return false;
   const g = value.game;
   if (
@@ -111,7 +121,7 @@ export function isSnapshot(value: unknown): value is Snapshot {
 }
 export function isCommand(value: unknown): value is Command {
   if (!object(value)) return false;
-  if (value.kind === "ready") return true;
+  if (value.kind === "start") return true;
   if (value.kind === "visibility") return typeof value.hidden === "boolean";
   if (value.kind === "pause") return typeof value.paused === "boolean";
   if (

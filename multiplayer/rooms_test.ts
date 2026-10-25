@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import type { RoomContext, RoomSocket } from "./cloudflare.ts";
-import { GameRoom, roomRequest, token } from "./rooms.ts";
+import { GameRoom, playerName, roomRequest, token } from "./rooms.ts";
 
 class Socket extends EventTarget implements RoomSocket {
   readonly CONNECTING = 0;
@@ -17,7 +17,13 @@ class Socket extends EventTarget implements RoomSocket {
   onclose = null;
   onmessage = null;
   onerror = null;
-  attachment: unknown = { role: null, count: 0, window: Date.now(), seq: -1 };
+  attachment: unknown = {
+    role: null,
+    name: "",
+    count: 0,
+    window: Date.now(),
+    seq: -1,
+  };
   sent: Record<string, unknown>[] = [];
   serializeAttachment(value: unknown) {
     this.attachment = structuredClone(value);
@@ -69,12 +75,22 @@ async function setup() {
     new Request("https://game.test/create", { method: "POST" }),
   );
   const { hostToken } = await response.json();
-  async function join(role: "host" | "guest", credential = token()) {
+  async function join(
+    role: "host" | "guest",
+    credential = token(),
+    name: unknown = role === "host" ? "Ada" : "Bo",
+  ) {
     const socket = new Socket();
     sockets.push(socket);
     await room.webSocketMessage(
       socket,
-      JSON.stringify({ type: "join", version: 1, role, token: credential }),
+      JSON.stringify({
+        type: "join",
+        version: 2,
+        role,
+        token: credential,
+        name,
+      }),
     );
     return socket;
   }
@@ -104,10 +120,46 @@ Deno.test("room authenticates host, reserves guest seat, and rejects a third pla
   assertEquals(impostor.readyState, 3);
   const host = await t.join("host", t.hostToken);
   const guest = await t.join("guest");
-  assertEquals(host.sent.at(-1), { type: "presence", host: true, guest: true });
+  assertEquals(host.sent.at(-1), {
+    type: "presence",
+    host: "Ada",
+    guest: "Bo",
+  });
   assertEquals(guest.sent.at(-1), host.sent.at(-1));
   const third = await t.join("guest");
   assertEquals(third.sent.at(-1)?.message, "Room full");
+});
+
+Deno.test("players join with a display name and can rename", async () => {
+  const t = await setup();
+  const nameless = await t.join("host", t.hostToken, "  ");
+  assertEquals(nameless.sent.at(-1)?.message, "Invalid name");
+  const host = await t.join("host", t.hostToken);
+  const guest = await t.join("guest");
+  await t.send(guest, { type: "name", name: "  Bo   Peep " });
+  assertEquals(host.sent.at(-1), {
+    type: "presence",
+    host: "Ada",
+    guest: "Bo Peep",
+  });
+  await t.wake();
+  await t.send(host, { type: "name", name: "Ada L" });
+  assertEquals(guest.sent.at(-1), {
+    type: "presence",
+    host: "Ada L",
+    guest: "Bo Peep",
+  });
+  await t.send(guest, { type: "name", name: "x".repeat(21) });
+  assertEquals(guest.readyState, 3);
+});
+
+Deno.test("display names reject invisible and direction-changing characters", () => {
+  assertEquals(playerName(" Dusty  Pete "), "Dusty Pete");
+  assertEquals(playerName("👩‍🚀 Ada"), "👩‍🚀 Ada");
+  assertEquals(playerName("x".repeat(20)), "x".repeat(20));
+  for (const name of ["", "x".repeat(21), "a\u0000b", "evil\u202egnp", 7]) {
+    assertEquals(playerName(name), null);
+  }
 });
 
 Deno.test("relay preserves roles and increasing sequence numbers across hibernation", async () => {
@@ -133,8 +185,8 @@ Deno.test("disconnect reserves identity for reconnect and notifies the other pla
   await t.room.webSocketClose(guest);
   assertEquals(host.sent.at(-1), {
     type: "presence",
-    host: true,
-    guest: false,
+    host: "Ada",
+    guest: null,
   });
   assert(t.alarm <= Date.now() + 30_000);
   await t.wake();
@@ -142,7 +194,11 @@ Deno.test("disconnect reserves identity for reconnect and notifies the other pla
   assertEquals(third.readyState, 3);
   const reconnected = await t.join("guest", key);
   assertEquals(reconnected.readyState, 1);
-  assertEquals(host.sent.at(-1), { type: "presence", host: true, guest: true });
+  assertEquals(host.sent.at(-1), {
+    type: "presence",
+    host: "Ada",
+    guest: "Bo",
+  });
   assert(t.alarm > Date.now() + 60_000);
 });
 
@@ -151,6 +207,7 @@ Deno.test("explicit leave closes both connections and expires the room", async (
   const host = await t.join("host", t.hostToken);
   const guest = await t.join("guest");
   await t.send(guest, { type: "leave" });
+  assertEquals(host.sent.at(-1)?.message, "Your partner left the game.");
   assertEquals(host.readyState, 3);
   assertEquals(guest.readyState, 3);
   assertEquals(t.values.size, 0);

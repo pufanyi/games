@@ -10,7 +10,7 @@ import {
   sparkle,
   woodBoard,
 } from "./paint.ts";
-import { DECK_Y, drawCamp, drawRig } from "./camp.ts";
+import { DECK_Y, drawCamp, drawRig, MINER_DX } from "./camp.ts";
 import { drawClaw } from "./claw.ts";
 import { drawScenery } from "./scenery.ts";
 import {
@@ -22,13 +22,54 @@ import {
 import { PIVOT_Y, TICK_RATE } from "../game/config.ts";
 import { drawItem, drawPocket } from "./sprites.ts";
 
-export function draw(ctx: Ctx, state: GameState) {
+/** A label over a miner's head, so online players can tell whose is whose. */
+export interface NameTag {
+  text: string;
+  own: boolean;
+}
+
+export function draw(
+  ctx: Ctx,
+  state: GameState,
+  tags: (NameTag | null)[] = [],
+) {
   drawScenery(ctx, state.tick);
   for (const item of state.items) drawPocket(ctx, item);
   for (const item of state.items) drawItem(ctx, item, state.tick);
   for (const player of state.players) drawPlayer(ctx, state, player);
   for (const effect of state.effects) drawEffect(ctx, effect);
   drawHud(ctx, state);
+  state.players.forEach((player, i) => {
+    if (tags[i]) drawNameTag(ctx, player.x + MINER_DX, tags[i]);
+  });
+}
+
+/** Between the two HUD boards, which take the top corners. */
+const TAG_LEFT = 190;
+const TAG_RIGHT = WIDTH - 190;
+
+function drawNameTag(ctx: Ctx, x: number, tag: NameTag) {
+  const size = 14;
+  ctx.font = `${size}px ${FONT}`;
+  let text = tag.text;
+  while (ctx.measureText(text).width > 120 && text.length > 1) {
+    text = `${[...text].slice(0, -2).join("")}…`;
+  }
+  const w = ctx.measureText(text).width + 16;
+  const h = 20;
+  const cx = Math.max(TAG_LEFT + w / 2, Math.min(TAG_RIGHT - w / 2, x));
+  const y = 2;
+  ctx.beginPath();
+  ctx.roundRect(cx - w / 2, y, w, h, h / 2);
+  ctx.fillStyle = tag.own ? "#ffd23f" : "#fff6df";
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#3a2312";
+  ctx.stroke();
+  ctx.fillStyle = "#3a2312";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, cx, y + h / 2 + 1);
 }
 
 function drawPlayer(ctx: Ctx, state: GameState, player: Player) {

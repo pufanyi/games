@@ -169,9 +169,12 @@ that line too (and vice versa).
 - Gold Miner's `runtime/online.ts` runs host/guest sessions;
   `runtime/protocol.ts` validates commands/snapshots and interpolates rendering.
   Host simulation is authoritative; guests never run scoring/collision logic.
-- Gold Miner co-op shares money, upgrades and dynamite. Both players ready
-  before start/replay and before the next level. Purchases clear readiness. Solo
-  high scores stay separate. Competitive mode is deferred.
+- Gold Miner co-op shares money, upgrades and dynamite. Either player starts a
+  game or replay; both ready before leaving the shop. Solo high scores stay
+  separate. Competitive mode is deferred.
+- Rooms carry display names: `join` and `name` messages set them, and `presence`
+  lists each seat's name (or null). Keep the online UI minimal (two seats, an
+  invite link while waiting, one Start button, named notices).
 - Invitations contain a room ID, never a host credential. Credentials stay in
   memory; reconnect retains a seat for 30 seconds, but page reload recovery and
   host migration are not supported. Single-player must work without the API.

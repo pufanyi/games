@@ -10,6 +10,7 @@ const TOKEN = /^[a-f0-9]{32}$/;
 const MAX_MESSAGE = 64 * 1024;
 const LIFETIME = 2 * 60 * 60 * 1000;
 const RECONNECT = 30_000;
+const VERSION = 2;
 type Role = "host" | "guest";
 interface Room {
   host: string;
@@ -20,6 +21,7 @@ interface Room {
 }
 interface Attachment {
   role: Role | null;
+  name: string;
   count: number;
   window: number;
   seq: number;
@@ -29,6 +31,19 @@ export function token(): string {
 }
 export function object(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+/**
+ * A display name others will see: single-spaced, 1–20 code points, with no
+ * control, private-use or bidi-override characters (emoji joiners allowed).
+ */
+export function playerName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const name = value.replace(/\s+/g, " ").trim();
+  const length = [...name].length;
+  return length >= 1 && length <= 20 &&
+      !/[\p{Cc}\p{Cs}\p{Co}\p{Cn}]|(?!\u200d)\p{Cf}/u.test(name)
+    ? name
+    : null;
 }
 function json(value: unknown, status = 200) {
   return Response.json(value, {
@@ -135,13 +150,15 @@ export class GameRoom {
     if (!object(message)) return this.reject(ws, "Invalid message");
     if (!attachment.role) {
       if (
-        message.type !== "join" || message.version !== 1 ||
+        message.type !== "join" || message.version !== VERSION ||
         typeof message.token !== "string" || !TOKEN.test(message.token)
       ) return this.reject(ws, "Invalid invitation or game version");
       const role = message.role;
       if (role !== "host" && role !== "guest") {
         return this.reject(ws, "Invalid role");
       }
+      const name = playerName(message.name);
+      if (!name) return this.reject(ws, "Invalid name");
       if (role === "host" && message.token !== room.host) {
         return this.reject(ws, "Invalid host credentials");
       }
@@ -160,6 +177,7 @@ export class GameRoom {
       }
       if (role === "guest") room.guest = message.token;
       attachment.role = role;
+      attachment.name = name;
       ws.serializeAttachment(attachment);
       room.deadline =
         this.sockets("host").length && this.sockets("guest").length
@@ -169,12 +187,20 @@ export class GameRoom {
             now + (room.guest ? RECONNECT : 15 * 60_000),
           );
       await this.save();
-      ws.send(JSON.stringify({ type: "joined", role, version: 1 }));
+      ws.send(JSON.stringify({ type: "joined", role, version: VERSION }));
       this.presence();
       return;
     }
     if (message.type === "leave") {
-      await this.end("A player left the room");
+      await this.end("Your partner left the game.");
+      return;
+    }
+    if (message.type === "name") {
+      const name = playerName(message.name);
+      if (!name) return this.reject(ws, "Invalid name");
+      attachment.name = name;
+      ws.serializeAttachment(attachment);
+      this.presence();
       return;
     }
     if (message.type === "ping") {
@@ -219,11 +245,15 @@ export class GameRoom {
       (socket.deserializeAttachment() as Attachment | null)?.role === role
     );
   }
+  /** Each seat's display name, or null while nobody is connected to it. */
   private presence() {
+    const name = (role: Role) =>
+      (this.sockets(role)[0]?.deserializeAttachment() as Attachment | undefined)
+        ?.name ?? null;
     const message = JSON.stringify({
       type: "presence",
-      host: this.sockets("host").length > 0,
-      guest: this.sockets("guest").length > 0,
+      host: name("host"),
+      guest: name("guest"),
     });
     for (const role of ["host", "guest"] as const) {
       for (const ws of this.sockets(role)) {

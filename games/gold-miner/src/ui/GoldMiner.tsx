@@ -1,15 +1,17 @@
 import {
   clearInvitation,
   invitation,
+  mySeat,
   OnlineSession,
+  type OnlineView,
 } from "../runtime/online.ts";
-import { OnlineScreen } from "./OnlineScreen.tsx";
+import { Notice, partnerStatus, RoomScreen } from "./OnlineScreen.tsx";
 // The game component: a canvas the loop draws on every frame, with React
 // screens on top that re-render only when their `View` changes.
 import { useEffect, useRef, useState } from "react";
 import { unlock } from "../runtime/audio.ts";
 import { HEIGHT, WIDTH } from "../game/config.ts";
-import { draw } from "../rendering/render.ts";
+import { draw, type NameTag } from "../rendering/render.ts";
 import {
   Controls,
   GameOverScreen,
@@ -83,7 +85,12 @@ export function GoldMiner() {
         pending -= DT;
         tick(session);
       }
-      draw(ctx, session.online?.render() ?? session.game);
+      const online = session.online;
+      draw(
+        ctx,
+        online?.render() ?? session.game,
+        online ? nameTags(online.view) : undefined,
+      );
       const next = viewOf(session);
       if (!sameView(displayed, next)) {
         displayed = next;
@@ -150,13 +157,13 @@ export function GoldMiner() {
   let screen = null;
   if (
     view.online &&
-    (view.online.lobby || view.online.status === "closed" ||
-      view.online.status === "connecting")
+    (view.online.lobby || view.online.status === "closed")
   ) {
     screen = (
-      <OnlineScreen
+      <RoomScreen
         online={view.online}
-        onReady={act(start)}
+        onStart={act(start)}
+        onRename={(name) => act((s) => s.online?.rename(name))()}
         onLeave={act(leave)}
       />
     );
@@ -174,6 +181,7 @@ export function GoldMiner() {
     screen = (
       <PauseScreen
         online={view.online}
+        status={view.online && partnerStatus(view.online)}
         onResume={act((s) => setPaused(s, false))}
         onQuit={act(leave)}
       />
@@ -213,15 +221,18 @@ export function GoldMiner() {
           onMute={act(toggleMuted)}
         />
       )}
-      {view.online && !view.online.lobby && view.online.status !== "closed" && (
-        <div className="online-status">
-          <span>
-            Co-op · {view.online.role === "host" ? "Left" : "Right"} miner
-          </span>
-          <button type="button" onClick={act(leave)}>Leave</button>
-        </div>
-      )}
       {screen}
+      {view.online && <Notice online={view.online} />}
     </div>
   );
+}
+
+/** "You" over your own miner, your friend's name over theirs once known. */
+function nameTags(online: OnlineView): (NameTag | null)[] {
+  const seat = mySeat(online);
+  return online.players.map((name, i) => {
+    if (i === seat) return { text: "You", own: true };
+    const text = name ?? online.partner;
+    return text ? { text, own: false } : null;
+  });
 }

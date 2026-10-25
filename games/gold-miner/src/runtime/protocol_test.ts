@@ -6,7 +6,6 @@ Deno.test("network validates snapshots before the canvas reads them", () => {
   const valid = {
     game: createGame(42, 2),
     lobby: true,
-    ready: [false, false],
     paused: false,
     round: 0,
   };
@@ -20,7 +19,7 @@ Deno.test("network validates snapshots before the canvas reads them", () => {
   );
   assert(!isSnapshot({ ...valid, game: { ...valid.game, money: NaN } }));
   assert(!isSnapshot({ ...valid, game: { ...valid.game, effects: [{}] } }));
-  assert(!isSnapshot({ ...valid, ready: [] }));
+  assert(!isSnapshot({ ...valid, round: "1" }));
 });
 
 Deno.test("network command validation rejects invented actions and shop items", () => {
