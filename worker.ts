@@ -3,12 +3,19 @@
 // `main.ts`; files are read through the ASSETS binding.
 import { BUILD_ASSETS, createHandler } from "./platform/app.tsx";
 
+import { roomRequest } from "./multiplayer/rooms.ts";
+import type { RoomNamespace } from "./multiplayer/cloudflare.ts";
+export { GameRoom } from "./multiplayer/rooms.ts";
+
 interface Env {
+  ROOMS?: RoomNamespace;
   ASSETS: { fetch(input: Request | string): Promise<Response> };
 }
 
 export default {
-  fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env): Promise<Response> {
+    const room = await roomRequest(req, env.ROOMS);
+    if (room) return room;
     const handler = createHandler({
       async hasIndex(slug) {
         // Assets serve `games/<slug>/index.html` at the trailing-slash URL.

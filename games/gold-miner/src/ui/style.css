@@ -1,4 +1,4 @@
-/* The game fills its window (the platform's iframe, or a tab of its own) and
+/* The game fills its own window and
    letterboxes the 4:3 stage in it. Everything inside the stage scales with the
    stage via container query units. The look matches the canvas: ink
    outlines, wood, parchment, and gold. */
@@ -602,4 +602,48 @@ kbd {
   .shopkeeper-eyes {
     animation: none;
   }
+}
+
+.invite-label {
+  font-weight: 700;
+}
+
+.invite-link {
+  width: 100%;
+  min-width: 0;
+  padding: 0.5em;
+  border: 2px solid var(--wood);
+  border-radius: 6px;
+  background: var(--parchment);
+  color: var(--text);
+  font: inherit;
+  user-select: text;
+}
+
+.online-status {
+  position: absolute;
+  top: 1cqw;
+  left: 25%;
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1cqw;
+  color: var(--parchment);
+  font: max(10px, 1.8cqw) var(--display);
+  text-shadow: 0 1px 3px var(--ink);
+}
+
+.online-status button {
+  border: 1px solid var(--wood);
+  border-radius: 5px;
+  color: var(--text);
+  background: var(--parchment);
+  font: inherit;
+  padding: 0.4em;
+  cursor: pointer;
+}
+
+.online-panel {
+  width: min(100%, 76cqw);
 }

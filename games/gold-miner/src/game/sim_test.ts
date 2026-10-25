@@ -295,3 +295,53 @@ Deno.test("bags can award small and large cash payouts without a clover", () => 
   assert(min < 20, `minimum payout: ${min}`);
   assert(max > 790, `maximum payout: ${max}`);
 });
+
+Deno.test("co-op has two independent claws and one shared mine", () => {
+  const state = createGame(42, 2);
+  assertEquals(state.players.length, 2);
+  step(state, [{ player: 1, action: "fire" }]);
+  assertEquals(state.players[0].claw.state, "swing");
+  assertEquals(state.players[1].claw.state, "extend");
+  // Both claws arriving at one item in the same tick can never duplicate it.
+  state.players[1].x = state.players[0].x;
+  for (const player of state.players) {
+    player.claw = {
+      state: "extend",
+      angle: 0,
+      dir: 1,
+      length: 100,
+      item: null,
+    };
+  }
+  state.items = [{
+    id: 1,
+    kind: "goldSmall",
+    x: state.players[0].x,
+    y: PIVOT_Y + 105,
+    r: 13,
+  }];
+  step(state);
+  assertEquals(state.items.length, 0);
+  assertEquals(state.players.filter((p) => p.claw.item?.id === 1).length, 1);
+});
+
+Deno.test("co-op shop requires both players; purchases clear both ready flags", () => {
+  const state = createGame(42, 2);
+  state.phase = "shop";
+  state.money = 1000;
+  state.shop = { offers: [{ item: "strength", price: 100, sold: false }] };
+  step(state, [{ player: 0, action: "continue" }]);
+  assertEquals(state.phase, "shop");
+  assertEquals(state.ready, [true, false]);
+  step(state, [{ player: 1, action: "buy", item: "strength" }]);
+  assertEquals(state.ready, [false, false]);
+  assertEquals(state.money, 900);
+  step(state, [{ player: 1, action: "continue" }]);
+  assertEquals(state.phase, "shop");
+  step(state, [{ player: 0, action: "continue" }]);
+  assertEquals(state.phase, "playing");
+  assertEquals(state.level, 2);
+  assertEquals(state.players.length, 2);
+  assertEquals(state.boosts.strength, true);
+  assertEquals(state.ready, [false, false]);
+});

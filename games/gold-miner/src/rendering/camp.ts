@@ -226,7 +226,7 @@ function drawCrank(ctx: Ctx, x: number, turn: number) {
  */
 export function drawCamp(ctx: Ctx, state: GameState, player: Player) {
   const turn = turnOf(player);
-  drawCart(ctx, player.x + 150, state);
+  if (state.players.length === 1) drawCart(ctx, player.x + 150, state);
   drawCrank(ctx, player.x, turn);
   drawMiner(ctx, player, moodOf(state, player), turn, state.tick);
 }

@@ -94,6 +94,8 @@ export interface GameState {
   /** Active this level. */
   boosts: Boosts;
   players: Player[];
+  /** Cooperative players must both be ready to leave the shop. */
+  ready: boolean[];
   items: Item[];
   shop: { offers: Offer[] } | null;
   effects: Effect[];
@@ -112,7 +114,7 @@ function restingClaw(): Claw {
   return { state: "swing", angle: 0, dir: 1, length: REST_LENGTH, item: null };
 }
 
-export function createGame(seed: number): GameState {
+export function createGame(seed: number, playerCount: 1 | 2 = 1): GameState {
   const state: GameState = {
     seed,
     rng: seed >>> 0,
@@ -125,7 +127,11 @@ export function createGame(seed: number): GameState {
     timeLeft: 0,
     dynamite: 0,
     boosts: noBoosts(),
-    players: [{ x: WIDTH / 2, claw: restingClaw() }],
+    players: Array.from({ length: playerCount }, (_, i) => ({
+      x: playerCount === 1 ? WIDTH / 2 : WIDTH * (i === 0 ? 0.28 : 0.68),
+      claw: restingClaw(),
+    })),
+    ready: Array.from({ length: playerCount }, () => false),
     items: [],
     shop: null,
     effects: [],
@@ -136,6 +142,7 @@ export function createGame(seed: number): GameState {
 }
 
 function startLevel(state: GameState) {
+  state.ready.fill(false);
   state.phase = "playing";
   state.goal = goalFor(state.level);
   state.timeLeft = LEVEL_SECONDS * TICK_RATE;
@@ -379,15 +386,19 @@ function stepShop(state: GameState, inputs: Input[]) {
   const shop = state.shop;
   if (!shop) return;
   for (const input of inputs) {
+    if (!state.players[input.player]) continue;
     if (input.action === "buy") {
       const offer = shop.offers.find((o) => o.item === input.item && !o.sold);
       if (!offer || state.money < offer.price) continue;
+      state.ready.fill(false);
       state.money -= offer.price;
       offer.sold = true;
       if (offer.item === "dynamite") state.dynamite++;
       else state.boosts[offer.item] = true;
       state.events.push({ type: "buy" });
     } else if (input.action === "continue") {
+      state.ready[input.player] = true;
+      if (!state.ready.every(Boolean)) continue;
       state.shop = null;
       state.level++;
       startLevel(state);

@@ -19,8 +19,16 @@
     // 404s) and fetches files from ASSETS itself.
     "run_worker_first": true
   },
-  // Required by `npx wrangler preview`, which Workers Builds runs for
-  // non-production branches (PRs). Empty means previews inherit everything
-  // above.
-  "previews": {}
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }]
+  },
+  "migrations": [
+    { "tag": "v1-game-rooms", "new_sqlite_classes": ["GameRoom"] }
+  ],
+  // Preview bindings are explicit; each branch gets isolated room storage.
+  "previews": {
+    "durable_objects": {
+      "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }]
+    }
+  }
 }

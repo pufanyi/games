@@ -1,3 +1,9 @@
+import {
+  clearInvitation,
+  invitation,
+  OnlineSession,
+} from "../runtime/online.ts";
+import { OnlineScreen } from "./OnlineScreen.tsx";
 // The game component: a canvas the loop draws on every frame, with React
 // screens on top that re-render only when their `View` changes.
 import { useEffect, useRef, useState } from "react";
@@ -35,6 +41,17 @@ export function GoldMiner() {
   const session = sessionRef.current;
   const [view, setView] = useState<View>(() => viewOf(session));
 
+  useEffect(() => {
+    const room = invitation();
+    if (room !== null) new OnlineSession(session, "guest", room);
+    return () => session.online?.leave();
+  }, [session]);
+
+  const leave = () => {
+    quitToTitle(session);
+    clearInvitation();
+  };
+
   // Runs a session action, then refreshes the screens right away rather than
   // waiting for the next frame.
   function act(action: (s: Session) => void) {
@@ -66,7 +83,7 @@ export function GoldMiner() {
         pending -= DT;
         tick(session);
       }
-      draw(ctx, session.game);
+      draw(ctx, session.online?.render() ?? session.game);
       const next = viewOf(session);
       if (!sameView(displayed, next)) {
         displayed = next;
@@ -82,7 +99,12 @@ export function GoldMiner() {
   useEffect(() => {
     const refresh = () => setView(viewOf(session));
     const onKey = (event: KeyboardEvent) => {
+      if (
+        event.target instanceof HTMLElement &&
+        event.target.closest("button, input, textarea, select, a")
+      ) return;
       if (session.mode === "title") {
+        if (session.online) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           start(session);
@@ -126,13 +148,34 @@ export function GoldMiner() {
     act((s) => queue(s, { player: 0, action: "buy", item }))();
 
   let screen = null;
-  if (view.mode === "title") {
-    screen = <TitleScreen view={view} onPlay={act(start)} />;
+  if (
+    view.online &&
+    (view.online.lobby || view.online.status === "closed" ||
+      view.online.status === "connecting")
+  ) {
+    screen = (
+      <OnlineScreen
+        online={view.online}
+        onReady={act(start)}
+        onLeave={act(leave)}
+      />
+    );
+  } else if (view.mode === "title") {
+    screen = (
+      <TitleScreen
+        view={view}
+        onPlay={act(start)}
+        onOnline={act((s) => {
+          new OnlineSession(s, "host");
+        })}
+      />
+    );
   } else if (view.paused) {
     screen = (
       <PauseScreen
+        online={view.online}
         onResume={act((s) => setPaused(s, false))}
-        onQuit={act(quitToTitle)}
+        onQuit={act(leave)}
       />
     );
   } else if (view.phase === "shop") {
@@ -148,7 +191,7 @@ export function GoldMiner() {
       <GameOverScreen
         view={view}
         onPlayAgain={act(start)}
-        onQuit={act(quitToTitle)}
+        onQuit={act(leave)}
       />
     );
   }
@@ -169,6 +212,14 @@ export function GoldMiner() {
           onPause={act((s) => setPaused(s, !s.paused))}
           onMute={act(toggleMuted)}
         />
+      )}
+      {view.online && !view.online.lobby && view.online.status !== "closed" && (
+        <div className="online-status">
+          <span>
+            Co-op · {view.online.role === "host" ? "Left" : "Right"} miner
+          </span>
+          <button type="button" onClick={act(leave)}>Leave</button>
+        </div>
       )}
       {screen}
     </div>

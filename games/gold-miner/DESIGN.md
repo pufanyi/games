@@ -4,9 +4,9 @@ A remake of the classic Flash game. The miner swings a claw from the top of the
 screen, fires it to grab gold and gems, and has to hit a money goal before time
 runs out. Check items off as they're built.
 
-**Status:** v1 is single-player and complete: everything above
-[Multiplayer](#multiplayer) is built. Source is in `src/`; `deno task dev` here
-runs it on its own with hot reload.
+**Status:** single-player and online cooperative two-player are implemented.
+Local two-player and competitive scoring are not implemented. Source is in
+`src/`; `deno task dev` here runs it on its own with hot reload.
 
 ## Core loop
 
@@ -127,8 +127,7 @@ use the same `INK` outline). Keep new art consistent with it:
 - [x] Game logic and canvas drawing in plain TS; title, pause, shop, and
       game-over screens as React components over the canvas, which only
       re-render when what they show changes (never every frame)
-- [x] Fills its window and scales to it, since it runs in the platform's iframe
-      and must also work opened directly at `/games/gold-miner/`
+- [x] Fills its window and scales to it, opened directly at `/games/gold-miner/`
 
 ### Source boundaries
 
@@ -159,42 +158,56 @@ export function step(state: GameState, inputs: Input[]): void; // one fixed tick
 
 ## Multiplayer
 
-Build in this order.
+### Online co-op
 
-### 1. Local two-player (no network)
+The first online mode is cooperative. Competitive scoring can be added later as
+an explicit mode; transport and room membership do not depend on scoring rules.
 
-The original had a two-player mode on one screen: two miners side by side, each
-with their own claw.
+- [x] Two miners share one mine, money total, goal, dynamite inventory and
+      boosts
+- [x] The host controls the left miner; the guest controls the right miner
+- [x] Both use Down / Space to fire, Up for dynamite, or touch controls
+- [x] An item can only be grabbed once; same-tick ties go to the left miner
+- [x] Both players ready before starting or replaying a game
+- [x] Both players ready before leaving the shop; a purchase resets readiness
+- [x] Either player can buy shared upgrades; the host serializes purchases
+- [x] Co-op results do not overwrite solo high scores
 
-- [ ] Player 1 uses ↓ and ↑, player 2 uses S and W
-- [ ] When both claws grab the same item, the earlier grab wins
-- [ ] **Decision:** players compete for separate scores, or share one goal?
+### Connection and synchronization
 
-### 2. Online
+- [x] Host creates a room and shares an invitation URL; no account required
+- [x] Guest opens the link to join; a third player gets a room-full message
+- [x] Host runs the simulation at 60 ticks/s and publishes snapshots at 20 Hz
+- [x] Guest sends commands; host assigns player identity from connection role
+- [x] Guest interpolates continuous claw/item motion between snapshots
+- [x] Protocol version, sequence numbers and round/level checks prevent stale
+      commands from being applied to a different game or level
+- [x] Pause is shared; hiding a tab pauses the game, and missing heartbeats also
+      pause it. Resume is explicit after both players return
+- [x] A transient socket disconnect pauses the game and reserves the same seat
+      for 30 seconds. Reconnecting sends a full snapshot; no host migration
+- [x] Leaving closes the room. Reloading loses credentials and the host's game;
+      start a new room after a page refresh
+- [x] Unjoined rooms expire after 15 minutes; all rooms expire after two hours
 
-Two browsers can't find each other without some third party.
+`src/runtime/online.ts` owns connection and host/guest behavior;
+`src/runtime/protocol.ts` validates game messages and interpolates guest frames.
+The game calls the optional same-origin `/api/multiplayer/rooms` service over
+HTTP/WebSocket without importing platform code. Single-player remains available
+without that service. Use `npx wrangler dev` to test online rooms locally; Vite
+and the standalone Deno server only serve the single-player/static game.
 
-| Option                                                       | Truly no backend?               | Reliability | Notes                                                                                                                                                                                                                                                              |
-| ------------------------------------------------------------ | ------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| WebRTC through [Trystero](https://github.com/dmotz/trystero) | Yes                             | Fair        | Peers find each other through free public services (BitTorrent trackers, Nostr and similar), then connect directly. Some networks block direct connections without a relay (TURN) server.                                                                          |
-| PeerJS                                                       | Uses PeerJS's free cloud server | Fair        | Simpler API; depends on a hosted service you don't control                                                                                                                                                                                                         |
-| WebSocket relay on the platform                              | No                              | Best        | Rooms that pass messages along, run by the platform's Cloudflare Worker (likely a Durable Object). A platform feature, so the game uses it only through the optional platform integration in `docs/architecture.md`, and must still work single-player without it. |
-| `BroadcastChannel`                                           | Yes                             | –           | Same browser only; useful for testing with two tabs                                                                                                                                                                                                                |
+The Cloudflare Worker uses one SQLite-backed Durable Object per room as a
+message relay. It stores only room credentials and expiry, not game snapshots.
+Hibernatable sockets retain role and rate/sequence metadata in attachments.
+Invite URLs contain only a random room ID; host credentials are separate and
+sent in the first WebSocket message, never in a URL. Messages are capped at 64
+KiB and 60 messages per second per connection. This is friend-to-friend co-op:
+the host is authoritative and is not protected against host cheating.
 
-- [ ] **Decision:** WebSocket relay (recommended, most reliable) or Trystero
-      (stays a static site)?
+### Deferred
 
-**Sharing state:** one player is the host.
-
-- [ ] Host runs `step()` and sends a state snapshot ~15–20 times a second (about
-      30 items plus two claws)
-- [ ] The other player sends only inputs and smooths motion between snapshots
-- [ ] Avoid lockstep (each player simulating, exchanging only inputs) for the
-      first version: `Math.sin`/`Math.cos` can differ slightly between browsers,
-      and the swing angle depends on them, so players drift out of sync
-
-**Online-only details:**
-
-- [ ] Shop phase: both players click "ready" before the next level starts
-- [ ] Room code or link to invite the other player
-- [ ] Message when a player disconnects (no host migration)
+- [ ] Local two-player keyboard mode
+- [ ] Selectable competitive mode with separate scores
+- [ ] Host migration or recovery across page reloads
+- [ ] Internet latency testing across player regions and mobile networks
