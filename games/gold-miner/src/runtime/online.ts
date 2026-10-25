@@ -11,26 +11,43 @@ import {
   isCommand,
   isSnapshot,
   object,
+  playerName,
   type Snapshot,
 } from "./protocol.ts";
 import type { Session } from "./session.ts";
+import { loadName, saveName } from "./storage.ts";
 
 const API = "/api/multiplayer/rooms";
 const TOKEN = /^[a-f0-9]{32}$/;
 export interface OnlineView {
   role: "host" | "guest";
   status: "connecting" | "connected" | "reconnecting" | "closed";
-  message: string;
+  /** Why the room closed. */
+  error: string;
   link: string;
-  peer: boolean;
+  /** Your display name, as you last chose it. */
+  name: string;
+  /** Who is connected to each seat (host = left miner), by display name. */
+  players: [string | null, string | null];
+  /** The partner's last known name, so a disconnect can still say who. */
+  partner: string;
+  /** Connected, but the partner has stopped answering. */
+  stalled: boolean;
   lobby: boolean;
-  ready: boolean[];
+  /** A short-lived announcement; a new `id` shows it again. */
+  notice: { id: number; text: string } | null;
 }
+/** The host plays the left miner (seat 0), the guest the right one. */
+export const mySeat = (view: OnlineView): 0 | 1 => view.role === "host" ? 0 : 1;
+/** The partner's name while they are connected, otherwise null. */
+export const partnerOf = (view: OnlineView): string | null =>
+  view.players[mySeat(view) === 0 ? 1 : 0];
 export interface OnlineDriver {
   view: OnlineView;
   input(input: Input): void;
   pause(paused: boolean): void;
-  ready(): void;
+  start(): void;
+  rename(name: string): void;
   leave(): void;
   canStep(): boolean;
   afterTick(): void;
@@ -53,6 +70,7 @@ export class OnlineSession implements OnlineDriver {
   private receivedSeq = -1;
   private round = 0;
   private guestHidden = false;
+  private metPartner = false;
   private events: GameEvent[] = [];
   private previous: GameState | null = null;
   private receivedAt = 0;
@@ -76,11 +94,14 @@ export class OnlineSession implements OnlineDriver {
     this.view = {
       role,
       status: "connecting",
-      message: "Connecting…",
+      error: "",
       link: "",
-      peer: false,
+      name: loadName(),
+      players: [null, null],
+      partner: "",
+      stalled: false,
       lobby: true,
-      ready: [false, false],
+      notice: null,
     };
     session.online = this;
     session.game = createGame(crypto.getRandomValues(new Uint32Array(1))[0], 2);
@@ -146,9 +167,10 @@ export class OnlineSession implements OnlineDriver {
       }
       this.send({
         type: "join",
-        version: 1,
+        version: 2,
         role: this.view.role,
         token: this.credential,
+        name: this.view.name,
       });
     });
     ws.addEventListener("message", (event) => {
@@ -173,25 +195,15 @@ export class OnlineSession implements OnlineDriver {
       );
     } else if (message.type === "joined") {
       this.view.status = "connected";
-      this.view.message = "Waiting for your partner…";
       this.receivedSeq = -1;
       this.lastPong = Date.now();
     } else if (message.type === "presence") {
-      this.view.peer = this.view.role === "host"
-        ? message.guest === true
-        : message.host === true;
-      this.lastPeer = Date.now();
-      this.session.queued = [];
-      if (!this.view.lobby) this.session.paused = true;
-      this.view.message = this.view.peer
-        ? "Both players connected"
-        : "Waiting for your partner to connect…";
-      this.snapshot();
+      this.presence(message.host, message.guest);
     } else if (message.type === "pong") {
       this.lastPong = Date.now();
     } else if (message.type === "heartbeat") {
       this.lastPeer = Date.now();
-      if (this.view.peer) this.view.message = "Both players connected";
+      this.view.stalled = false;
     } else if (
       typeof message.seq === "number" && message.seq > this.receivedSeq
     ) {
@@ -217,10 +229,40 @@ export class OnlineSession implements OnlineDriver {
         this.session.mode = payload.lobby ? "title" : "game";
         this.session.paused = payload.paused;
         this.view.lobby = payload.lobby;
-        this.view.ready = payload.ready;
         for (const event of payload.game.events) play(event.type);
       }
     }
+  }
+  private get peer(): boolean {
+    return partnerOf(this.view) !== null;
+  }
+  private presence(host: unknown, guest: unknown) {
+    const before = partnerOf(this.view);
+    this.view.players = [playerName(host), playerName(guest)];
+    const after = partnerOf(this.view);
+    this.lastPeer = Date.now();
+    this.view.stalled = false;
+    this.session.queued = [];
+    if (!this.view.lobby) this.session.paused = true;
+    if (after && !before) {
+      if (this.metPartner) this.notify(`${after} is back`);
+      else {
+        this.notify(
+          this.view.role === "host"
+            ? `${after} joined!`
+            : `You joined ${after}'s game`,
+        );
+      }
+      this.metPartner = true;
+      play("bonus");
+    } else if (before && !after) {
+      this.notify(`${before} disconnected`);
+    }
+    if (after) this.view.partner = after;
+    this.snapshot();
+  }
+  private notify(text: string) {
+    this.view.notice = { id: (this.view.notice?.id ?? 0) + 1, text };
   }
   input(input: Input) {
     this.dispatch({
@@ -237,12 +279,21 @@ export class OnlineSession implements OnlineDriver {
     }
     this.dispatch({ kind: "pause", paused });
   }
-  ready() {
+  start() {
     unlock();
-    this.dispatch({ kind: "ready" });
+    this.dispatch({ kind: "start" });
+  }
+  rename(value: string) {
+    const name = playerName(value);
+    if (!name || name === this.view.name) return;
+    this.view.name = name;
+    saveName(name);
+    if (this.view.status !== "connected") return;
+    this.view.players[mySeat(this.view)] = name;
+    this.send({ type: "name", name });
   }
   private dispatch(command: Command) {
-    if (this.view.status !== "connected" || !this.view.peer) return;
+    if (this.view.status !== "connected" || !this.peer) return;
     if (this.view.role === "host") this.command(command, 0);
     else {this.send({
         type: "command",
@@ -251,21 +302,18 @@ export class OnlineSession implements OnlineDriver {
       });}
   }
   private command(command: Command, player: 0 | 1) {
-    if (!this.view.peer) return;
+    if (!this.peer) return;
     const s = this.session;
-    if (command.kind === "ready") {
+    // Either player can start; the other is already looking at the same screen.
+    if (command.kind === "start") {
       if (!this.view.lobby && s.game.phase !== "gameOver") return;
-      this.view.ready[player] = true;
-      if (this.view.ready.every(Boolean)) {
-        s.game = createGame(crypto.getRandomValues(new Uint32Array(1))[0], 2);
-        s.mode = "game";
-        s.paused = document.hidden || this.guestHidden;
-        s.queued = [];
-        this.events = [];
-        this.view.lobby = false;
-        this.view.ready = [false, false];
-        this.round++;
-      }
+      s.game = createGame(crypto.getRandomValues(new Uint32Array(1))[0], 2);
+      s.mode = "game";
+      s.paused = document.hidden || this.guestHidden;
+      s.queued = [];
+      this.events = [];
+      this.view.lobby = false;
+      this.round++;
     } else if (command.kind === "visibility") {
       if (player === 1) this.guestHidden = command.hidden;
       if (command.hidden) {
@@ -291,7 +339,7 @@ export class OnlineSession implements OnlineDriver {
   }
   canStep(): boolean {
     return this.view.role === "host" && this.view.status === "connected" &&
-      this.view.peer && !this.view.lobby;
+      this.peer && !this.view.lobby;
   }
   afterTick() {
     this.events.push(...this.session.game.events);
@@ -300,7 +348,7 @@ export class OnlineSession implements OnlineDriver {
   private snapshot() {
     if (
       this.view.role !== "host" || this.view.status !== "connected" ||
-      !this.view.peer
+      !this.peer
     ) return;
     // Drop superseded snapshots when the network is congested instead of building
     // an ever-growing queue. Reliable actions are separate, small messages.
@@ -311,7 +359,6 @@ export class OnlineSession implements OnlineDriver {
     const payload: Snapshot = {
       game: { ...this.session.game, events: this.events.splice(0, 200) },
       lobby: this.view.lobby,
-      ready: this.view.ready,
       paused: this.session.paused,
       round: this.round,
     };
@@ -362,15 +409,14 @@ export class OnlineSession implements OnlineDriver {
         this.dispatch({ kind: "visibility", hidden: document.hidden });
       }
       if (
-        this.view.peer &&
+        this.peer &&
         (now - this.lastPeer > 5000 ||
           (this.view.role === "guest" && this.lastSnapshot &&
             now - this.lastSnapshot > 5000))
       ) {
         this.session.paused = true;
         this.session.queued = [];
-        this.view.message =
-          "Your partner is not responding. Waiting for them to return…";
+        this.view.stalled = true;
       }
       this.snapshot();
     } else if (
@@ -382,9 +428,8 @@ export class OnlineSession implements OnlineDriver {
     if (this.view.status === "connected") {
       this.reconnectUntil = Date.now() + 30_000;
     }
+    // Seats stay as last seen, so getting back in doesn't announce a "join".
     this.view.status = "reconnecting";
-    this.view.message = "Connection lost. Reconnecting for up to 30 seconds…";
-    this.view.peer = false;
     this.session.paused = true;
     this.session.queued = [];
     this.retryAt = Date.now() + 1500;
@@ -400,7 +445,7 @@ export class OnlineSession implements OnlineDriver {
   }
   private fail(message: string) {
     this.view.status = "closed";
-    this.view.message = message;
+    this.view.error = message;
     this.session.paused = true;
     this.dispose();
   }

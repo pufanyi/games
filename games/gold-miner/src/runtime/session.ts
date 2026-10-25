@@ -103,7 +103,7 @@ export function queue(s: Session, input: Input) {
 
 export function start(s: Session) {
   if (s.online) {
-    s.online.ready();
+    s.online.start();
     return;
   }
   unlock();

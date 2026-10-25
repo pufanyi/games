@@ -390,7 +390,6 @@ function stepShop(state: GameState, inputs: Input[]) {
     if (input.action === "buy") {
       const offer = shop.offers.find((o) => o.item === input.item && !o.sold);
       if (!offer || state.money < offer.price) continue;
-      state.ready.fill(false);
       state.money -= offer.price;
       offer.sold = true;
       if (offer.item === "dynamite") state.dynamite++;

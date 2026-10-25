@@ -168,14 +168,36 @@ an explicit mode; transport and room membership do not depend on scoring rules.
 - [x] The host controls the left miner; the guest controls the right miner
 - [x] Both use Down / Space to fire, Up for dynamite, or touch controls
 - [x] An item can only be grabbed once; same-tick ties go to the left miner
-- [x] Both players ready before starting or replaying a game
-- [x] Both players ready before leaving the shop; a purchase resets readiness
+- [x] Either player presses Start in the room or Play again after a game over;
+      both are already looking at the same screen, so there is no ready check
+- [x] Both players ready before leaving the shop; shopping keeps readiness, and
+      the button names the friend you are waiting for
 - [x] Either player can buy shared upgrades; the host serializes purchases
 - [x] Co-op results do not overwrite solo high scores
+
+### Room and names
+
+Keep the online UI to what two friends need: who is here, how to invite, and one
+button to start.
+
+- [x] Players have a display name, remembered in `localStorage`; first-timers
+      get a random miner's name. Edit it in place on your room seat
+- [x] The room shows two seats that mirror the left and right miners; an empty
+      seat says "Waiting…" until a friend arrives
+- [x] Only the host, and only while the second seat is empty, sees the invite
+      link and its Copy button
+- [x] Joining, returning and disconnecting show a named notice over the mine; a
+      join also plays a chime
+- [x] In game, a gold "You" tag marks your miner and your friend's name marks
+      theirs
+- [x] Pause names the friend you are waiting for after a disconnect
 
 ### Connection and synchronization
 
 - [x] Host creates a room and shares an invitation URL; no account required
+- [x] Names travel with the relay's join and presence messages, so seat changes
+      arrive already named; names are 1–20 characters with no invisible or
+      direction-changing characters
 - [x] Guest opens the link to join; a third player gets a room-full message
 - [x] Host runs the simulation at 60 ticks/s and publishes snapshots at 20 Hz
 - [x] Guest sends commands; host assigns player identity from connection role

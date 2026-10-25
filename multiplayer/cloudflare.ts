@@ -26,6 +26,7 @@ export function upgrade(context: RoomContext): Response {
   context.acceptWebSocket(pair[1]);
   pair[1].serializeAttachment({
     role: null,
+    name: "",
     count: 0,
     window: Date.now(),
     seq: -1,
